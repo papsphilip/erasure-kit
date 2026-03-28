@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ErasureKit — GDPR Data Erasure Tool</title>
+  <meta name="description" content="Free, open-source tool to send GDPR Article 17 data erasure requests to all known data brokers. No accounts, no tracking.">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="ErasureKit — GDPR Data Erasure Tool">
+  <meta property="og:description" content="One-click automated data erasure across all known brokers. Free, open-source, no tracking.">
+  <meta property="og:type" content="website">
+
+  <!-- Emoji favicon (shield) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+
+  <!-- Tailwind v4 CDN (dev mode only, ~300KB, not for production) -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+  <!-- Import Map: resolve bare specifiers to esm.sh CDN -->
+  <script type="importmap">
+  {
+    "imports": {
+      "preact": "https://esm.sh/preact@10.29.0",
+      "preact/": "https://esm.sh/preact@10.29.0/",
+      "preact/hooks": "https://esm.sh/preact@10.29.0/hooks",
+      "@preact/signals": "https://esm.sh/@preact/signals@1.3.4?external=preact",
+      "htm/preact": "https://esm.sh/htm@3.1.1/preact?external=preact"
+    }
+  }
+  </script>
+
+  <!-- Theme: Tailwind custom variant + design tokens -->
+  <style type="text/tailwindcss">
+    @custom-variant dark (&:where(.dark, .dark *));
+
+    @theme {
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+      --color-ek-primary: #0EA5E9;
+      --color-ek-accent: #06B6D4;
+      --color-ek-success: #22C55E;
+      --color-ek-warning: #F59E0B;
+      --color-ek-danger: #EF4444;
+    }
+  </style>
+
+  <!-- CSS Custom Properties for dark/light mode switching -->
+  <style>
+    :root {
+      --ek-primary: #0EA5E9;
+      --ek-accent: #06B6D4;
+      --ek-surface: #0F172A;
+      --ek-surface-alt: #1E293B;
+      --ek-text: #F8FAFC;
+      --ek-text-muted: #94A3B8;
+      --ek-success: #22C55E;
+      --ek-warning: #F59E0B;
+      --ek-danger: #EF4444;
+      --ek-border: #334155;
+    }
+    .light {
+      --ek-surface: #F8FAFC;
+      --ek-surface-alt: #F1F5F9;
+      --ek-text: #0F172A;
+      --ek-text-muted: #64748B;
+      --ek-border: #E2E8F0;
+    }
+  </style>
+</head>
+<body class="bg-[var(--ek-surface)] text-[var(--ek-text)] font-sans transition-colors duration-200">
+  <div id="app"></div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

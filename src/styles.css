@@ -1,0 +1,13 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  --color-ek-primary: #0EA5E9;
+  --color-ek-accent: #06B6D4;
+  --color-ek-success: #22C55E;
+  --color-ek-warning: #F59E0B;
+  --color-ek-danger: #EF4444;
+}

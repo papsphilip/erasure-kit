@@ -1,0 +1,32 @@
+{
+  "name": "erasure-kit",
+  "version": "1.0.0",
+  "description": "Free, open-source GDPR Article 17 data erasure tool",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite serve src",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "gdpr",
+    "privacy",
+    "data-erasure",
+    "article-17"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@preact/signals": "^2.9.0",
+    "preact": "^10.29.0"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.5",
+    "@tailwindcss/vite": "^4.2.1",
+    "tailwindcss": "^4.2.2",
+    "vite": "^7",
+    "vite-plugin-singlefile": "^2.3.2",
+    "vitest": "^4.1.2"
+  }
+}
