@@ -60,7 +60,7 @@ Exceptions: Stepper step circles are 28px (7 Tailwind units) -- not a spacing to
 
 **Usage rules:**
 - Display: welcome screen title only ("ErasureKit" hero heading)
-- Heading: section titles, step titles, page headings
+- Heading: section titles, step titles, page headings, brand text in header
 - Body: paragraph text, descriptions, bullet lists, privacy statement
 - Label: stepper step labels, button text, navigation items, metadata
 
@@ -127,7 +127,7 @@ Accent is NOT used on: body text, card backgrounds, borders, dividers, hamburger
 |-----------|------------|--------|
 | **AppShell** | Full-viewport container. `min-h-screen`, bg dominant surface, text primary. Flexbox column: header + main + footer. | Default only |
 | **Header** | Sticky top bar. Height 56px (`h-14`). Secondary surface bg. Flex row: brand text left, theme toggle + hamburger right. Bottom border `1px slate-700 dark / slate-200 light`. | Default only |
-| **BrandText** | "ErasureKit" in accent color, 18px semibold. No logo (D-10). | Default only |
+| **BrandText** | "ErasureKit" in accent color, 20px semibold (Heading role). No logo (D-10). `text-xl font-semibold`. | Default only |
 | **ThemeToggle** | 40px button (`w-10 h-10`). Sun icon (light) / moon icon (dark). 20px inline SVG. `rounded-lg` (8px per D-11). Transparent bg, hover: secondary surface. | Default, Hover |
 | **HamburgerMenu** | 40px button (`w-10 h-10`). Three-line icon, 20px inline SVG. `rounded-lg`. Opens slide-in panel from right edge (280px wide, secondary surface bg). Items: Legal Reference, Escalation, About. Each item 48px tall, full-width, `rounded-lg` on hover. Backdrop overlay `bg-black/50`. | Closed, Open |
 | **Stepper** | Horizontal bar below header. Centered flex row. 4 steps connected by 32px horizontal lines (2px thick). Each step: circle (28px) + label. `rounded-lg` button wrapper for each step. Mobile: circles only, labels hidden (`hidden sm:inline`). | Step states below |
@@ -208,7 +208,7 @@ Accent is NOT used on: body text, card backgrounds, borders, dividers, hamburger
 | OG title | "ErasureKit — GDPR Data Erasure Tool" |
 | OG description | "One-click automated data erasure across all known brokers. Free, open-source, no tracking." |
 | Empty state (brokers failed to load) | "Could not load broker database. Make sure brokers.json is in the same folder as this file." |
-| Error state (generic) | "Something went wrong. Try refreshing the page." |
+| Error state (generic) | "ErasureKit encountered an unexpected error. Try refreshing the page, or if the problem persists, re-download the latest version from GitHub." |
 
 **Source:** D-12, D-13, D-14, D-17 (CONTEXT.md). Welcome heading and body composed to match the tool's value proposition. Placeholder copy for future-phase steps.
 
