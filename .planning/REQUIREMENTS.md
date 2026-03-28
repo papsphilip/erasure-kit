@@ -132,58 +132,58 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BRKR-01 | Phase 1 | Pending |
-| BRKR-02 | Phase 1 | Pending |
-| BRKR-03 | Phase 1 | Pending |
-| BRKR-04 | Phase 1 | Pending |
-| BRKR-05 | Phase 1 | Pending |
-| BRKR-06 | Phase 1 | Pending |
-| IDEN-01 | Phase 1 | Pending |
-| IDEN-02 | Phase 1 | Pending |
-| IDEN-03 | Phase 1 | Pending |
-| IDEN-04 | Phase 1 | Pending |
-| PERS-01 | Phase 1 | Pending |
-| PERS-02 | Phase 1 | Pending |
-| PERS-03 | Phase 1 | Pending |
-| PERS-04 | Phase 1 | Pending |
-| DIST-01 | Phase 1 | Pending |
-| DIST-02 | Phase 1 | Pending |
-| DIST-03 | Phase 1 | Pending |
-| TMPL-01 | Phase 2 | Pending |
-| TMPL-02 | Phase 2 | Pending |
-| TMPL-03 | Phase 2 | Pending |
-| TMPL-04 | Phase 2 | Pending |
-| TMPL-05 | Phase 2 | Pending |
-| TMPL-06 | Phase 2 | Pending |
-| SEND-01 | Phase 2 | Pending |
-| SEND-02 | Phase 2 | Pending |
-| SEND-03 | Phase 2 | Pending |
-| SEND-04 | Phase 2 | Pending |
-| STAT-01 | Phase 2 | Pending |
-| STAT-02 | Phase 2 | Pending |
-| STAT-03 | Phase 2 | Pending |
-| STAT-04 | Phase 2 | Pending |
-| STAT-05 | Phase 2 | Pending |
-| TEMP-01 | Phase 3 | Pending |
-| TEMP-02 | Phase 3 | Pending |
-| TEMP-03 | Phase 3 | Pending |
-| TEMP-04 | Phase 3 | Pending |
-| TEMP-05 | Phase 3 | Pending |
-| TEMP-06 | Phase 3 | Pending |
-| TEMP-07 | Phase 3 | Pending |
-| ESCL-01 | Phase 4 | Pending |
-| ESCL-02 | Phase 4 | Pending |
-| ESCL-03 | Phase 4 | Pending |
-| LEGL-01 | Phase 4 | Pending |
-| LEGL-02 | Phase 4 | Pending |
-| LEGL-03 | Phase 4 | Pending |
-| LEGL-04 | Phase 4 | Pending |
+| DIST-01 | Phase 1: App Shell and Distribution | Pending |
+| DIST-02 | Phase 1: App Shell and Distribution | Pending |
+| DIST-03 | Phase 1: App Shell and Distribution | Pending |
+| IDEN-01 | Phase 2: Identity Input and Persistence | Pending |
+| IDEN-02 | Phase 2: Identity Input and Persistence | Pending |
+| IDEN-03 | Phase 2: Identity Input and Persistence | Pending |
+| IDEN-04 | Phase 2: Identity Input and Persistence | Pending |
+| PERS-01 | Phase 2: Identity Input and Persistence | Pending |
+| PERS-02 | Phase 2: Identity Input and Persistence | Pending |
+| PERS-03 | Phase 2: Identity Input and Persistence | Pending |
+| PERS-04 | Phase 2: Identity Input and Persistence | Pending |
+| BRKR-01 | Phase 3: Broker Database | Pending |
+| BRKR-02 | Phase 3: Broker Database | Pending |
+| BRKR-03 | Phase 3: Broker Database | Pending |
+| BRKR-04 | Phase 3: Broker Database | Pending |
+| BRKR-05 | Phase 3: Broker Database | Pending |
+| BRKR-06 | Phase 3: Broker Database | Pending |
+| TMPL-01 | Phase 4: Email Templates | Pending |
+| TMPL-02 | Phase 4: Email Templates | Pending |
+| TMPL-03 | Phase 4: Email Templates | Pending |
+| TMPL-04 | Phase 4: Email Templates | Pending |
+| TMPL-05 | Phase 4: Email Templates | Pending |
+| TMPL-06 | Phase 4: Email Templates | Pending |
+| SEND-01 | Phase 5: Sending and Status Tracking | Pending |
+| SEND-02 | Phase 5: Sending and Status Tracking | Pending |
+| SEND-03 | Phase 5: Sending and Status Tracking | Pending |
+| SEND-04 | Phase 5: Sending and Status Tracking | Pending |
+| STAT-01 | Phase 5: Sending and Status Tracking | Pending |
+| STAT-02 | Phase 5: Sending and Status Tracking | Pending |
+| STAT-03 | Phase 5: Sending and Status Tracking | Pending |
+| STAT-04 | Phase 5: Sending and Status Tracking | Pending |
+| STAT-05 | Phase 5: Sending and Status Tracking | Pending |
+| TEMP-01 | Phase 6: Temp Email Monitoring | Pending |
+| TEMP-02 | Phase 6: Temp Email Monitoring | Pending |
+| TEMP-03 | Phase 6: Temp Email Monitoring | Pending |
+| TEMP-04 | Phase 6: Temp Email Monitoring | Pending |
+| TEMP-05 | Phase 6: Temp Email Monitoring | Pending |
+| TEMP-06 | Phase 6: Temp Email Monitoring | Pending |
+| TEMP-07 | Phase 6: Temp Email Monitoring | Pending |
+| LEGL-01 | Phase 7: Legal Reference | Pending |
+| LEGL-02 | Phase 7: Legal Reference | Pending |
+| LEGL-03 | Phase 7: Legal Reference | Pending |
+| LEGL-04 | Phase 7: Legal Reference | Pending |
+| ESCL-01 | Phase 8: Escalation | Pending |
+| ESCL-02 | Phase 8: Escalation | Pending |
+| ESCL-03 | Phase 8: Escalation | Pending |
 
 **Coverage:**
-- v1 requirements: 45 total
-- Mapped to phases: 45
-- Unmapped: 0 ✓
+- v1 requirements: 46 total
+- Mapped to phases: 46
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-28 after initial definition*
+*Last updated: 2026-03-28 after roadmap creation (8 phases)*
