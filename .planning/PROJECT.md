@@ -12,7 +12,9 @@ One-click automated data erasure across all known brokers without exposing the u
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] Separate `brokers.json` file — user-editable, community-expandable, imported by the app *(Validated in Phase 1: App Shell and Distribution)*
+- [x] Single portable HTML file via Vite + vite-plugin-singlefile *(Validated in Phase 1)*
+- [x] Zero build-step dev mode with CDN-loaded modules *(Validated in Phase 1)*
 
 ### Active
 
@@ -70,12 +72,15 @@ One-click automated data erasure across all known brokers without exposing the u
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Portable web app (not desktop) | No install friction, share via link/file, works everywhere | — Pending |
+| Portable web app (not desktop) | No install friction, share via link/file, works everywhere | Validated (Phase 1) |
+| Preact + HTM (not React) | 3KB gzipped, no build step needed for dev, CDN-loadable | Validated (Phase 1) |
 | Temp email via mail.tm API | Free, no API key, REST API, supports create/read/delete | — Pending |
-| Separate brokers.json file | Community can contribute brokers via GitHub PRs without touching app code | — Pending |
+| Separate brokers.json file | Community can contribute brokers via GitHub PRs without touching app code | Validated (Phase 1) |
 | Local file storage (not localStorage) | Users can backup, transfer, and inspect their progress data | — Pending |
 | English only for v1 | Ship fast, i18n framework can be added later for community translations | — Pending |
 | Minimal identity (name + emails) | GDPR data minimization — only share what brokers need to find records | — Pending |
+| Wizard stepper navigation | 4 steps with free jumping, secondary screens in hamburger menu | Validated (Phase 1) |
+| Privacy blue-gray palette | Trust/security aesthetic, dark+light mode with toggle | Validated (Phase 1) |
 
 ## Evolution
 
@@ -95,4 +100,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-28 after initialization*
+*Last updated: 2026-03-28 after Phase 1 completion*
