@@ -79,9 +79,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Distribution
 
-- [ ] **DIST-01**: App builds to a single portable HTML file via Vite + vite-plugin-singlefile
-- [ ] **DIST-02**: App works in development mode with zero build step (CDN-loaded modules, open index.html directly)
-- [ ] **DIST-03**: `brokers.json` is a standalone file that can be updated independently of the app
+- [x] **DIST-01**: App builds to a single portable HTML file via Vite + vite-plugin-singlefile
+- [x] **DIST-02**: App works in development mode with zero build step (CDN-loaded modules, open index.html directly)
+- [x] **DIST-03**: `brokers.json` is a standalone file that can be updated independently of the app
 
 ## v2 Requirements
 
@@ -132,9 +132,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DIST-01 | Phase 1: App Shell and Distribution | Pending |
-| DIST-02 | Phase 1: App Shell and Distribution | Pending |
-| DIST-03 | Phase 1: App Shell and Distribution | Pending |
+| DIST-01 | Phase 1: App Shell and Distribution | Complete |
+| DIST-02 | Phase 1: App Shell and Distribution | Complete |
+| DIST-03 | Phase 1: App Shell and Distribution | Complete |
 | IDEN-01 | Phase 2: Identity Input and Persistence | Pending |
 | IDEN-02 | Phase 2: Identity Input and Persistence | Pending |
 | IDEN-03 | Phase 2: Identity Input and Persistence | Pending |

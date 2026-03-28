@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. The brokers.json file exists as a separate standalone file that loads at runtime in both dev and production modes
 **Plans:** 2 plans
 Plans:
-- [ ] 01-01-PLAN.md — Project scaffolding, Vite config, dev-mode index.html, theme/router/broker-loader libs, distribution assets
+- [x] 01-01-PLAN.md — Project scaffolding, Vite config, dev-mode index.html, theme/router/broker-loader libs, distribution assets
 - [ ] 01-02-PLAN.md — App shell UI components (Header, Stepper, HamburgerMenu, ThemeToggle, Footer), WelcomeScreen, placeholder pages, root App, build verification
 **UI hint**: yes
 
