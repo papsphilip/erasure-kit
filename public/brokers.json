@@ -1,0 +1,12 @@
+[
+  {
+    "name": "Example Broker",
+    "email": "privacy@example.com",
+    "region": "EU",
+    "category": "Data Broker",
+    "privacyPortalUrl": "https://example.com/privacy",
+    "legalFramework": "GDPR",
+    "tempEmailAccepted": true,
+    "notes": "Example entry for development. Real brokers added in Phase 3."
+  }
+]
