@@ -31,7 +31,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. User can open index.html directly in a browser and see a functioning app shell with navigation (no build step, CDN-loaded modules)
   2. User can run a Vite build that produces a single self-contained HTML file that works identically when double-clicked
   3. The brokers.json file exists as a separate standalone file that loads at runtime in both dev and production modes
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 01-01-PLAN.md — Project scaffolding, Vite config, dev-mode index.html, theme/router/broker-loader libs, distribution assets
+- [ ] 01-02-PLAN.md — App shell UI components (Header, Stepper, HamburgerMenu, ThemeToggle, Footer), WelcomeScreen, placeholder pages, root App, build verification
 **UI hint**: yes
 
 ### Phase 2: Identity Input and Persistence
@@ -126,7 +129,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. App Shell and Distribution | 0/0 | Not started | - |
+| 1. App Shell and Distribution | 0/2 | Planning complete | - |
 | 2. Identity Input and Persistence | 0/0 | Not started | - |
 | 3. Broker Database | 0/0 | Not started | - |
 | 4. Email Templates | 0/0 | Not started | - |
