@@ -52,9 +52,11 @@ Exceptions: Stepper step circles are 28px (7 Tailwind units) -- not a spacing to
 | Role | Size | Weight | Line Height | Tailwind Class |
 |------|------|--------|-------------|----------------|
 | Body | 16px | 400 (regular) | 1.5 | `text-base font-normal leading-normal` |
-| Label / Small | 14px | 500 (medium) | 1.4 | `text-sm font-medium leading-snug` |
+| Label / Small | 14px | 400 (regular) | 1.4 | `text-sm font-normal leading-snug` |
 | Heading | 20px | 600 (semibold) | 1.3 | `text-xl font-semibold leading-tight` |
-| Display | 28px | 700 (bold) | 1.2 | `text-2xl sm:text-3xl font-bold leading-none` |
+| Display | 28px | 600 (semibold) | 1.2 | `text-2xl sm:text-3xl font-semibold leading-none` |
+
+**Weights used: 2 total** -- 400 (regular) and 600 (semibold). No other weights permitted in Phase 1.
 
 **Usage rules:**
 - Display: welcome screen title only ("ErasureKit" hero heading)
@@ -62,7 +64,7 @@ Exceptions: Stepper step circles are 28px (7 Tailwind units) -- not a spacing to
 - Body: paragraph text, descriptions, bullet lists, privacy statement
 - Label: stepper step labels, button text, navigation items, metadata
 
-**Source:** D-09 (system font stack). Sizes are defaults appropriate for a privacy tool targeting non-technical EU adults -- 16px body ensures readability.
+**Source:** D-09 (system font stack). Sizes are defaults appropriate for a privacy tool targeting non-technical EU adults -- 16px body ensures readability. Weights consolidated to 2 (regular + semibold) per design constraint.
 
 ---
 
@@ -115,6 +117,12 @@ Accent is NOT used on: body text, card backgrounds, borders, dividers, hamburger
 
 ## Component Inventory (Phase 1)
 
+### Primary Focal Point
+
+**Welcome screen:** The primary focal point is the Display heading ("Take back your data") and the CTA button ("Get Started" / "Resume Campaign"). These two elements form the visual anchor. The heading draws the eye with the largest type size (28px semibold), and the CTA button anchors the action with an accent-colored solid background, full-width on mobile. All other welcome screen content (body text, bullet points, privacy statement) is supporting context that leads the user's eye from heading to CTA.
+
+### Component Specs
+
 | Component | Visual Spec | States |
 |-----------|------------|--------|
 | **AppShell** | Full-viewport container. `min-h-screen`, bg dominant surface, text primary. Flexbox column: header + main + footer. | Default only |
@@ -123,9 +131,9 @@ Accent is NOT used on: body text, card backgrounds, borders, dividers, hamburger
 | **ThemeToggle** | 40px button (`w-10 h-10`). Sun icon (light) / moon icon (dark). 20px inline SVG. `rounded-lg` (8px per D-11). Transparent bg, hover: secondary surface. | Default, Hover |
 | **HamburgerMenu** | 40px button (`w-10 h-10`). Three-line icon, 20px inline SVG. `rounded-lg`. Opens slide-in panel from right edge (280px wide, secondary surface bg). Items: Legal Reference, Escalation, About. Each item 48px tall, full-width, `rounded-lg` on hover. Backdrop overlay `bg-black/50`. | Closed, Open |
 | **Stepper** | Horizontal bar below header. Centered flex row. 4 steps connected by 32px horizontal lines (2px thick). Each step: circle (28px) + label. `rounded-lg` button wrapper for each step. Mobile: circles only, labels hidden (`hidden sm:inline`). | Step states below |
-| **StepCircle** | 28px circle (`w-7 h-7 rounded-full`). Border 2px. Number inside (14px bold). | Future: dimmed text + dimmed border. Current: accent bg, white text. Completed: accent bg, white checkmark SVG (16px). |
+| **StepCircle** | 28px circle (`w-7 h-7 rounded-full`). Border 2px. Number inside (14px regular). | Future: dimmed text + dimmed border. Current: accent bg, white text. Completed: accent bg, white checkmark SVG (16px). |
 | **StepConnector** | 32px wide (`w-8`), 2px tall line between circles. | Incomplete: `slate-600 dark / slate-300 light`. Complete: accent color. |
-| **WelcomeScreen** | Centered content, max-width 640px (`max-w-2xl`). Vertical stack with 24px gaps. Shield emoji (48px) at top. Display heading. Body paragraph. 4 bullet points with inline SVG icons (16px, accent color). CTA button. Privacy statement at bottom. | New user, Returning user |
+| **WelcomeScreen** | Centered content, max-width 640px (`max-w-2xl`). Vertical stack with 24px gaps. Shield emoji (48px) at top. Display heading (focal point). Body paragraph. 4 bullet points with inline SVG icons (16px, accent color). CTA button (focal point). Privacy statement at bottom. | New user, Returning user |
 | **PrimaryCTA** | Full-width on mobile, auto-width on desktop (`w-full sm:w-auto`). Min-height 48px (`h-12`). Horizontal padding 32px (`px-8`). Accent bg, white text. 16px semibold label. `rounded-lg` (8px per D-11). Hover: darken 10%. Active: darken 15%. Focus: 2px accent ring offset 2px. | Default, Hover, Active, Focus, Disabled |
 | **PrivacyStatement** | Centered text at bottom of welcome screen. 14px muted text. Lock icon (14px inline SVG) before text. | Default only |
 | **PlaceholderPage** | Centered empty state for Step 1-4 pages (Identity, Brokers, Send, Track). Step title heading + "Coming in Phase N" body text + construction icon. | Default only |
@@ -195,9 +203,9 @@ Accent is NOT used on: body text, card backgrounds, borders, dividers, hamburger
 | About page body | "ErasureKit is a free, open-source tool that helps Europeans exercise their GDPR Article 17 right to erasure. It generates and sends legally accurate data deletion requests to known data brokers without exposing your real email address." |
 | Placeholder step heading | "{Step Name}" |
 | Placeholder step body | "Coming in Phase {N}" |
-| Meta title | "ErasureKit \u2014 GDPR Data Erasure Tool" |
+| Meta title | "ErasureKit — GDPR Data Erasure Tool" |
 | Meta description | "Free, open-source tool to send GDPR Article 17 data erasure requests to all known data brokers. No accounts, no tracking." |
-| OG title | "ErasureKit \u2014 GDPR Data Erasure Tool" |
+| OG title | "ErasureKit — GDPR Data Erasure Tool" |
 | OG description | "One-click automated data erasure across all known brokers. Free, open-source, no tracking." |
 | Empty state (brokers failed to load) | "Could not load broker database. Make sure brokers.json is in the same folder as this file." |
 | Error state (generic) | "Something went wrong. Try refreshing the page." |
