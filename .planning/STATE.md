@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 1 UI-SPEC approved
-last_updated: "2026-03-28T19:04:52.653Z"
-last_activity: 2026-03-28 -- Phase 01 execution started
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-03-28T19:19:22.653Z"
+last_activity: 2026-03-28
 progress:
   total_phases: 8
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 0
+  completed_plans: 2
   percent: 0
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-03-28)
 ## Current Position
 
 Phase: 01 (app-shell-and-distribution) — EXECUTING
-Plan: 1 of 2
-Status: Executing Phase 01
-Last activity: 2026-03-28 -- Phase 01 execution started
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-03-28
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -52,6 +52,7 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: —
 
 *Updated after each plan completion*
+| Phase 01 P02 | 5min | 2 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -64,6 +65,7 @@ Recent decisions affecting current work:
 - [Research]: mail.tm is receive-only — sending via mailto: links (user's email client)
 - [Research]: Preact + HTM stack (not React) for zero-build-step dev mode
 - [Research]: browser-fs-access for cross-browser file persistence
+- [Phase 01]: Added htm as npm dependency for Vite build mode (was CDN-only in dev mode)
 
 ### Pending Todos
 
@@ -76,6 +78,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T18:29:04.040Z
-Stopped at: Phase 1 UI-SPEC approved
-Resume file: .planning/phases/01-app-shell-and-distribution/01-UI-SPEC.md
+Last session: 2026-03-28T19:19:22.651Z
+Stopped at: Completed 01-02-PLAN.md
+Resume file: None
