@@ -23,7 +23,7 @@ export function createEmptyCampaign() {
       phone: '',
       address: '',
     },
-    brokers: {},
+    brokers: { selected: [] },
     tempEmail: null,
     messages: [],
     statuses: {},
@@ -51,6 +51,7 @@ export function migrateCampaign(data) {
     ...empty,
     ...data,
     identity: { ...empty.identity, ...(data.identity || {}) },
+    brokers: { ...empty.brokers, ...(data.brokers || {}) },
     updatedAt: new Date().toISOString(),
     version: CURRENT_VERSION,
   };
@@ -165,6 +166,81 @@ export function removeEmail(index) {
     updatedAt: new Date().toISOString(),
     identity: { ...campaign.value.identity, emails },
   };
+}
+
+// ── Broker Selection Helpers (D-13, D-14, D-15) ─────────────────────────────────
+
+/**
+ * Toggle a broker's selection state.
+ * @param {string} brokerId - The broker ID slug
+ */
+export function toggleBrokerSelection(brokerId) {
+  const selected = campaign.value.brokers.selected || [];
+  const idx = selected.indexOf(brokerId);
+  const next = idx >= 0
+    ? selected.filter((id) => id !== brokerId)
+    : [...selected, brokerId];
+  campaign.value = {
+    ...campaign.value,
+    updatedAt: new Date().toISOString(),
+    brokers: { ...campaign.value.brokers, selected: next },
+  };
+}
+
+/**
+ * Add multiple broker IDs to the selection (deduplicates).
+ * @param {string[]} brokerIds - Array of broker ID slugs to select
+ */
+export function selectBrokers(brokerIds) {
+  const existing = new Set(campaign.value.brokers.selected || []);
+  brokerIds.forEach((id) => existing.add(id));
+  campaign.value = {
+    ...campaign.value,
+    updatedAt: new Date().toISOString(),
+    brokers: { ...campaign.value.brokers, selected: [...existing] },
+  };
+}
+
+/**
+ * Remove multiple broker IDs from the selection.
+ * @param {string[]} brokerIds - Array of broker ID slugs to deselect
+ */
+export function deselectBrokers(brokerIds) {
+  const toRemove = new Set(brokerIds);
+  const next = (campaign.value.brokers.selected || []).filter((id) => !toRemove.has(id));
+  campaign.value = {
+    ...campaign.value,
+    updatedAt: new Date().toISOString(),
+    brokers: { ...campaign.value.brokers, selected: next },
+  };
+}
+
+/**
+ * Clear all broker selections.
+ */
+export function deselectAllBrokers() {
+  campaign.value = {
+    ...campaign.value,
+    updatedAt: new Date().toISOString(),
+    brokers: { ...campaign.value.brokers, selected: [] },
+  };
+}
+
+/**
+ * Check if a broker is currently selected.
+ * @param {string} brokerId - The broker ID slug
+ * @returns {boolean}
+ */
+export function isBrokerSelected(brokerId) {
+  return (campaign.value.brokers.selected || []).includes(brokerId);
+}
+
+/**
+ * Get the count of selected brokers.
+ * @returns {number}
+ */
+export function getSelectedCount() {
+  return (campaign.value.brokers.selected || []).length;
 }
 
 // ── File Save/Load (D-11, D-17, D-18, D-22) ───────────────────────────────────

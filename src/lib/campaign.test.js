@@ -55,7 +55,7 @@ describe('campaign', () => {
       expect(empty.identity.emails).toEqual(['']);
       expect(empty.identity.phone).toBe('');
       expect(empty.identity.address).toBe('');
-      expect(empty.brokers).toEqual({});
+      expect(empty.brokers).toEqual({ selected: [] });
       expect(empty.tempEmail).toBe(null);
       expect(empty.messages).toEqual([]);
       expect(empty.statuses).toEqual({});
@@ -132,7 +132,7 @@ describe('campaign', () => {
       expect(result.identity.fullName).toBe('Test User');
       expect(result.identity.emails).toEqual(['']);
       expect(result.identity.phone).toBe('');
-      expect(result.brokers).toEqual({});
+      expect(result.brokers).toEqual({ selected: [] });
       expect(result.tempEmail).toBe(null);
       expect(result.messages).toEqual([]);
       expect(result.statuses).toEqual({});

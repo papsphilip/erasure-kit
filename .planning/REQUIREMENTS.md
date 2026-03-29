@@ -9,12 +9,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Broker Database
 
-- [ ] **BRKR-01**: App loads broker data from a separate `brokers.json` file that users can view and edit independently
-- [ ] **BRKR-02**: Broker database contains 100+ entries compiled from open-source GitHub lists (BADBOOL, JustVanish, data-eraser, Vermont/CA registries, datarequests.org)
-- [ ] **BRKR-03**: Each broker entry includes: name, email, region, type/category, privacy portal URL, legal framework (GDPR/UK-GDPR/CCPA), and notes
-- [ ] **BRKR-04**: User can search and filter brokers by name, region, and category
-- [ ] **BRKR-05**: User can select/deselect individual brokers or bulk-select by region/category
-- [ ] **BRKR-06**: Broker database includes a `tempEmailAccepted` field indicating whether the broker is known to block disposable email addresses
+- [x] **BRKR-01**: App loads broker data from a separate `brokers.json` file that users can view and edit independently
+- [x] **BRKR-02**: Broker database contains 100+ entries compiled from open-source GitHub lists (BADBOOL, JustVanish, data-eraser, Vermont/CA registries, datarequests.org)
+- [x] **BRKR-03**: Each broker entry includes: name, email, region, type/category, privacy portal URL, legal framework (GDPR/UK-GDPR/CCPA), and notes
+- [x] **BRKR-04**: User can search and filter brokers by name, region, and category
+- [x] **BRKR-05**: User can select/deselect individual brokers or bulk-select by region/category
+- [x] **BRKR-06**: Broker database includes a `tempEmailAccepted` field indicating whether the broker is known to block disposable email addresses
 
 ### Email Templates
 
@@ -143,12 +143,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PERS-02 | Phase 2: Identity Input and Persistence | Complete |
 | PERS-03 | Phase 2: Identity Input and Persistence | Complete |
 | PERS-04 | Phase 2: Identity Input and Persistence | Complete |
-| BRKR-01 | Phase 3: Broker Database | Pending |
-| BRKR-02 | Phase 3: Broker Database | Pending |
-| BRKR-03 | Phase 3: Broker Database | Pending |
-| BRKR-04 | Phase 3: Broker Database | Pending |
-| BRKR-05 | Phase 3: Broker Database | Pending |
-| BRKR-06 | Phase 3: Broker Database | Pending |
+| BRKR-01 | Phase 3: Broker Database | Complete |
+| BRKR-02 | Phase 3: Broker Database | Complete |
+| BRKR-03 | Phase 3: Broker Database | Complete |
+| BRKR-04 | Phase 3: Broker Database | Complete |
+| BRKR-05 | Phase 3: Broker Database | Complete |
+| BRKR-06 | Phase 3: Broker Database | Complete |
 | TMPL-01 | Phase 4: Email Templates | Pending |
 | TMPL-02 | Phase 4: Email Templates | Pending |
 | TMPL-03 | Phase 4: Email Templates | Pending |

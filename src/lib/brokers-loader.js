@@ -17,7 +17,9 @@ export async function loadBrokers() {
       return window.__ERASUREKIT_BROKERS__;
     }
     try {
-      const module = await import('./brokers.js');
+      // Dynamic path prevents Rollup from failing on missing file at build time
+      const path = './brokers' + '.js';
+      const module = await import(/* @vite-ignore */ path);
       return module.default;
     } catch (e2) {
       console.warn('ErasureKit: Could not load brokers.json. Using empty broker list.');
