@@ -1,12 +1,41 @@
 import { html } from 'htm/preact';
+import { signal } from '@preact/signals';
 import { navigateTo } from '../lib/router.js';
+import { hasExistingCampaign, campaign, startNewCampaign, loadCampaignFromFile } from '../lib/campaign.js';
+
+/** Error message for failed file load on welcome screen */
+const welcomeLoadError = signal(null);
 
 /**
- * Landing page with hero heading, step bullets, CTA button, and privacy statement.
- * Detects returning users via localStorage 'ek-campaign' key.
+ * Handle "Load from file" on welcome screen (D-21).
+ * On success, navigates to identity page. On error, shows inline message.
+ */
+async function handleWelcomeLoad() {
+  welcomeLoadError.value = null;
+  const result = await loadCampaignFromFile();
+  if (result && result.success) {
+    navigateTo('identity');
+  } else if (result && result.error) {
+    welcomeLoadError.value = result.error === 'invalid'
+      ? "This file doesn't appear to be a valid ErasureKit campaign"
+      : "Could not read this file";
+    setTimeout(() => { welcomeLoadError.value = null; }, 5000);
+  }
+}
+
+/**
+ * Landing page with hero heading, step bullets, CTA section, and privacy statement.
+ * Returning users (D-19): see Resume Campaign + Start New buttons with summary text (D-20).
+ * New users: see Get Started button.
+ * Both see "Load from file" link (D-21).
  */
 export function WelcomeScreen() {
-  const hasExistingCampaign = typeof localStorage !== 'undefined' && localStorage.getItem('ek-campaign') !== null;
+  const isReturning = hasExistingCampaign.value;
+
+  /** Count non-empty email addresses for the summary text (D-20) */
+  const emailCount = isReturning
+    ? campaign.value.identity.emails.filter(e => e.trim() !== '').length
+    : 0;
 
   return html`
     <div class="max-w-2xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
@@ -41,15 +70,51 @@ export function WelcomeScreen() {
         </div>
       </div>
 
-      <!-- CTA button -->
-      <div class="flex justify-center mb-8">
-        <button
-          onClick=${() => navigateTo('identity')}
-          class="w-full sm:w-auto h-12 px-8 bg-[var(--ek-primary)] text-white text-base font-semibold rounded-lg hover:brightness-90 active:brightness-85 transition-all duration-150 hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ek-surface)] outline-none"
-        >
-          ${hasExistingCampaign ? 'Resume Campaign' : 'Get Started'}
-        </button>
-      </div>
+      <!-- CTA section: conditional rendering based on returning user status -->
+      ${isReturning ? html`
+        <!-- Returning user flow (D-19, D-20, D-21) -->
+        <p class="text-sm text-[var(--ek-text-muted)] text-center mb-4">
+          You have an unsaved campaign with ${emailCount} email${emailCount !== 1 ? 's' : ''} to erase
+        </p>
+
+        <div class="flex flex-col sm:flex-row justify-center gap-3 mb-4">
+          <button
+            onClick=${() => navigateTo('identity')}
+            class="h-12 px-8 bg-[var(--ek-primary)] text-white text-base font-semibold rounded-lg hover:brightness-90 active:brightness-85 transition-all duration-150 hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ek-surface)] outline-none"
+          >
+            Resume Campaign
+          </button>
+          <button
+            onClick=${() => { startNewCampaign(); navigateTo('identity'); }}
+            class="h-12 px-8 bg-transparent border border-[var(--ek-border)] text-[var(--ek-text)] text-base font-semibold rounded-lg hover:bg-[var(--ek-surface-alt)] transition-all duration-150 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ek-surface)] outline-none"
+          >
+            Start New
+          </button>
+        </div>
+
+        <div class="text-center">
+          <button
+            onClick=${handleWelcomeLoad}
+            class="text-sm text-[var(--ek-text-muted)] hover:text-[var(--ek-primary)] underline transition-colors"
+          >
+            Load from file
+          </button>
+        </div>
+
+        ${welcomeLoadError.value && html`
+          <p class="text-sm text-[var(--ek-danger)] text-center mt-2">${welcomeLoadError.value}</p>
+        `}
+      ` : html`
+        <!-- New user flow -->
+        <div class="flex justify-center mb-8">
+          <button
+            onClick=${() => navigateTo('identity')}
+            class="w-full sm:w-auto h-12 px-8 bg-[var(--ek-primary)] text-white text-base font-semibold rounded-lg hover:brightness-90 active:brightness-85 transition-all duration-150 hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ek-surface)] outline-none"
+          >
+            Get Started
+          </button>
+        </div>
+      `}
 
       <!-- Privacy statement -->
       <p class="text-sm text-[var(--ek-text-muted)] text-center mt-8 flex items-center justify-center gap-1.5">
