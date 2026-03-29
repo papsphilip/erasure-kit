@@ -15,6 +15,8 @@ One-click automated data erasure across all known brokers without exposing the u
 - [x] Separate `brokers.json` file — user-editable, community-expandable, imported by the app *(Validated in Phase 1: App Shell and Distribution)*
 - [x] Single portable HTML file via Vite + vite-plugin-singlefile *(Validated in Phase 1)*
 - [x] Zero build-step dev mode with CDN-loaded modules *(Validated in Phase 1)*
+- [x] Minimal identity input: name + email(s) to erase. Optional: phone, address *(Validated in Phase 2: Identity Input and Persistence)*
+- [x] Save/load progress to local JSON file via File System API *(Validated in Phase 2)*
 
 ### Active
 
@@ -32,8 +34,6 @@ One-click automated data erasure across all known brokers without exposing the u
 - [ ] Legal reference page: identity verification guide (what to share, how to push back)
 - [ ] Legal reference page: country-specific Data Protection Authorities with complaint links
 - [ ] Legal reference page: escalation email templates and DPA complaint letters
-- [ ] Minimal identity input: name + email(s) to erase. Optional: phone, address
-- [ ] Save/load progress to local JSON file via File System API
 - [ ] Region-aware email templates (strict GDPR for UK/EU, CCPA/broader for US brokers)
 - [ ] Dashboard showing overall stats: sent, responded, overdue, completed
 - [ ] Per-broker status tracking: pending → sent → awaiting response → completed/escalated
@@ -76,9 +76,9 @@ One-click automated data erasure across all known brokers without exposing the u
 | Preact + HTM (not React) | 3KB gzipped, no build step needed for dev, CDN-loadable | Validated (Phase 1) |
 | Temp email via mail.tm API | Free, no API key, REST API, supports create/read/delete | — Pending |
 | Separate brokers.json file | Community can contribute brokers via GitHub PRs without touching app code | Validated (Phase 1) |
-| Local file storage (not localStorage) | Users can backup, transfer, and inspect their progress data | — Pending |
+| Local file storage (not localStorage) | Users can backup, transfer, and inspect their progress data | Validated (Phase 2) |
 | English only for v1 | Ship fast, i18n framework can be added later for community translations | — Pending |
-| Minimal identity (name + emails) | GDPR data minimization — only share what brokers need to find records | — Pending |
+| Minimal identity (name + emails) | GDPR data minimization — only share what brokers need to find records | Validated (Phase 2) |
 | Wizard stepper navigation | 4 steps with free jumping, secondary screens in hamburger menu | Validated (Phase 1) |
 | Privacy blue-gray palette | Trust/security aesthetic, dark+light mode with toggle | Validated (Phase 1) |
 
@@ -100,4 +100,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-28 after Phase 1 completion*
+*Last updated: 2026-03-29 after Phase 2 completion*
