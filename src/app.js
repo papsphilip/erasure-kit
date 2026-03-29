@@ -5,6 +5,9 @@ import { currentPage } from './lib/router.js';
 // Side-effect import: initializes theme effect (dark/light class toggling)
 import './lib/theme.js';
 
+// Side-effect import: initializes campaign auto-save effect
+import './lib/campaign.js';
+
 // Shell components
 import { Header } from './components/Header.js';
 import { Stepper } from './components/Stepper.js';
