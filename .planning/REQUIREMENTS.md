@@ -65,17 +65,17 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Persistence
 
-- [ ] **PERS-01**: User can save full campaign state (identity, broker statuses, temp email credentials, messages, deadlines) to a local JSON file via File System API
-- [ ] **PERS-02**: User can load a previously saved campaign file to resume progress
-- [ ] **PERS-03**: App falls back to download/upload JSON for browsers without File System API (Firefox, Safari)
-- [ ] **PERS-04**: App auto-saves to localStorage as a secondary cache to prevent data loss between explicit saves
+- [x] **PERS-01**: User can save full campaign state (identity, broker statuses, temp email credentials, messages, deadlines) to a local JSON file via File System API
+- [x] **PERS-02**: User can load a previously saved campaign file to resume progress
+- [x] **PERS-03**: App falls back to download/upload JSON for browsers without File System API (Firefox, Safari)
+- [x] **PERS-04**: App auto-saves to localStorage as a secondary cache to prevent data loss between explicit saves
 
 ### Identity Input
 
-- [ ] **IDEN-01**: User enters their full name (required for GDPR requests)
-- [ ] **IDEN-02**: User enters one or more email addresses they want erased from broker records
-- [ ] **IDEN-03**: User can optionally provide phone number and postal address for more thorough data matching
-- [ ] **IDEN-04**: Identity data is stored only locally — never transmitted to any server other than the email send
+- [x] **IDEN-01**: User enters their full name (required for GDPR requests)
+- [x] **IDEN-02**: User enters one or more email addresses they want erased from broker records
+- [x] **IDEN-03**: User can optionally provide phone number and postal address for more thorough data matching
+- [x] **IDEN-04**: Identity data is stored only locally — never transmitted to any server other than the email send
 
 ### Distribution
 
@@ -135,14 +135,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DIST-01 | Phase 1: App Shell and Distribution | Complete |
 | DIST-02 | Phase 1: App Shell and Distribution | Complete |
 | DIST-03 | Phase 1: App Shell and Distribution | Complete |
-| IDEN-01 | Phase 2: Identity Input and Persistence | Pending |
-| IDEN-02 | Phase 2: Identity Input and Persistence | Pending |
-| IDEN-03 | Phase 2: Identity Input and Persistence | Pending |
-| IDEN-04 | Phase 2: Identity Input and Persistence | Pending |
-| PERS-01 | Phase 2: Identity Input and Persistence | Pending |
-| PERS-02 | Phase 2: Identity Input and Persistence | Pending |
-| PERS-03 | Phase 2: Identity Input and Persistence | Pending |
-| PERS-04 | Phase 2: Identity Input and Persistence | Pending |
+| IDEN-01 | Phase 2: Identity Input and Persistence | Complete |
+| IDEN-02 | Phase 2: Identity Input and Persistence | Complete |
+| IDEN-03 | Phase 2: Identity Input and Persistence | Complete |
+| IDEN-04 | Phase 2: Identity Input and Persistence | Complete |
+| PERS-01 | Phase 2: Identity Input and Persistence | Complete |
+| PERS-02 | Phase 2: Identity Input and Persistence | Complete |
+| PERS-03 | Phase 2: Identity Input and Persistence | Complete |
+| PERS-04 | Phase 2: Identity Input and Persistence | Complete |
 | BRKR-01 | Phase 3: Broker Database | Pending |
 | BRKR-02 | Phase 3: Broker Database | Pending |
 | BRKR-03 | Phase 3: Broker Database | Pending |
