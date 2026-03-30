@@ -1,7 +1,7 @@
 ---
 scope: tools/erasure-kit
 status: paused
-phase: "Phase 4 complete — ready for Phase 5: Sending and Status Tracking"
+phase: "Phase 5 discuss in progress — 2 of 4 areas done (Send layout, Batch UX)"
 gsd_command: "gsd:discuss-phase 5"
 last_updated: "2026-03-30"
 ---
@@ -10,9 +10,13 @@ last_updated: "2026-03-30"
 
 ## Resume Instructions
 
-Phases 1-4 complete and verified.
+Phase 5 discuss-phase is **halfway done**. Two areas captured, two remaining.
 
-**Next step:** `/gsd:discuss-phase 5` to gather context for the Sending and Status Tracking phase.
+**Next step:** `/gsd:discuss-phase 5` — when prompted that context exists, choose "Update it". Then discuss the remaining two areas:
+1. **Campaign dashboard** — where the progress dashboard lives, what stats/visuals it shows
+2. **Status lifecycle** — how statuses transition, overdue flags, manual status changes
+
+The WIP context file is at `.planning/phases/05-sending-and-status-tracking/05-CONTEXT-WIP.md` — read it to see decisions captured so far (D-01 through D-12).
 
 ## What's Built
 
