@@ -22,7 +22,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **TMPL-02**: Templates are region-aware: strict GDPR for EU/EEA brokers, UK GDPR for UK brokers, CCPA/broader for US brokers
 - [x] **TMPL-03**: Templates use correct legal terminology: "one calendar month" (not "30 days") for response deadline
 - [x] **TMPL-04**: Templates include user's identity information (name + email addresses to erase) as provided in identity input
-- [ ] **TMPL-05**: User can preview the generated email text before sending
+- [x] **TMPL-05**: User can preview the generated email text before sending
 - [x] **TMPL-06**: User can copy email text to clipboard as fallback when mailto: is impractical
 
 ### Sending
@@ -153,7 +153,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TMPL-02 | Phase 4: Email Templates | Complete |
 | TMPL-03 | Phase 4: Email Templates | Complete |
 | TMPL-04 | Phase 4: Email Templates | Complete |
-| TMPL-05 | Phase 4: Email Templates | Pending |
+| TMPL-05 | Phase 4: Email Templates | Complete |
 | TMPL-06 | Phase 4: Email Templates | Complete |
 | SEND-01 | Phase 5: Sending and Status Tracking | Pending |
 | SEND-02 | Phase 5: Sending and Status Tracking | Pending |
