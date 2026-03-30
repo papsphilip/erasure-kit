@@ -9,6 +9,8 @@ import {
   deselectAllBrokers,
 } from '../lib/campaign.js';
 import { navigateTo, markStepComplete } from '../lib/router.js';
+import { TemplateDrawer } from '../components/TemplateDrawer.js';
+import { TemplateSidebar, openSidebar, sidebarOpen } from '../components/TemplateSidebar.js';
 
 // ── Local UI State (signals -- not persisted) ────────────────────────────────
 
@@ -220,6 +222,15 @@ function ExternalLinkIcon() {
   `;
 }
 
+function PreviewIcon() {
+  return html`
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  `;
+}
+
 // ── Truncate email for table display ─────────────────────────────────────────
 
 function truncateEmail(email, maxLen = 28) {
@@ -263,7 +274,7 @@ export function Brokers() {
   const canContinue = selCount > 0;
 
   return html`
-    <div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto px-4 py-8 transition-all duration-200 ${sidebarOpen.value ? 'sm:mr-[420px] lg:mr-[480px]' : ''}">
       <div class="rounded-xl bg-[var(--ek-surface-alt)] shadow-lg overflow-hidden">
 
         ${/* ── Sticky Toolbar (D-06, D-07) ──────────────────────── */''}
@@ -338,6 +349,9 @@ export function Brokers() {
           </div>
         </div>
 
+        ${/* ── Template Drawer (Phase 4) ──────────────────────── */''}
+        <${TemplateDrawer} />
+
         ${/* ── Table ──────────────────────────────────────────── */''}
         ${visible.length === 0
           ? html`
@@ -400,6 +414,9 @@ export function Brokers() {
           </button>
         </div>
       </div>
+
+      ${/* ── Template Sidebar (Phase 4 -- fixed position, outside card flow) ── */''}
+      <${TemplateSidebar} brokers=${allBrokers.value} />
     </div>
   `;
 }
@@ -464,7 +481,22 @@ function BrokerRow({ broker }) {
       <td class="px-3 py-3 text-[var(--ek-text-muted)] hidden sm:table-cell">${broker.region}</td>
       <td class="px-3 py-3 text-[var(--ek-text-muted)] hidden lg:table-cell">${broker.category}</td>
       <td class="px-2 py-3 text-[var(--ek-text-muted)]">
-        <${ChevronDownIcon} open=${isExpanded} />
+        <div class="flex items-center gap-1">
+          ${isSelected && html`
+            <button
+              type="button"
+              class="relative group p-1 text-[var(--ek-primary)] hover:text-[var(--ek-primary-hover)] transition-colors duration-150"
+              onClick=${(e) => { e.stopPropagation(); openSidebar(broker.id); }}
+              aria-label="Preview template for ${broker.name}"
+            >
+              <${PreviewIcon} />
+              <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs bg-[var(--ek-surface)] text-[var(--ek-text)] border border-[var(--ek-border)] rounded shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-20">
+                Preview template
+              </span>
+            </button>
+          `}
+          <${ChevronDownIcon} open=${isExpanded} />
+        </div>
       </td>
     </tr>
     ${isExpanded && html`
