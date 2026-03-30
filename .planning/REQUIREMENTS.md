@@ -18,12 +18,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Email Templates
 
-- [ ] **TMPL-01**: App generates legally accurate GDPR Article 17 erasure request emails citing Art. 17(1), Art. 19 (third-party notification), Art. 12(3) (response deadline), and Art. 12(4) (refusal explanation)
-- [ ] **TMPL-02**: Templates are region-aware: strict GDPR for EU/EEA brokers, UK GDPR for UK brokers, CCPA/broader for US brokers
-- [ ] **TMPL-03**: Templates use correct legal terminology: "one calendar month" (not "30 days") for response deadline
-- [ ] **TMPL-04**: Templates include user's identity information (name + email addresses to erase) as provided in identity input
+- [x] **TMPL-01**: App generates legally accurate GDPR Article 17 erasure request emails citing Art. 17(1), Art. 19 (third-party notification), Art. 12(3) (response deadline), and Art. 12(4) (refusal explanation)
+- [x] **TMPL-02**: Templates are region-aware: strict GDPR for EU/EEA brokers, UK GDPR for UK brokers, CCPA/broader for US brokers
+- [x] **TMPL-03**: Templates use correct legal terminology: "one calendar month" (not "30 days") for response deadline
+- [x] **TMPL-04**: Templates include user's identity information (name + email addresses to erase) as provided in identity input
 - [ ] **TMPL-05**: User can preview the generated email text before sending
-- [ ] **TMPL-06**: User can copy email text to clipboard as fallback when mailto: is impractical
+- [x] **TMPL-06**: User can copy email text to clipboard as fallback when mailto: is impractical
 
 ### Sending
 
@@ -149,12 +149,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BRKR-04 | Phase 3: Broker Database | Complete |
 | BRKR-05 | Phase 3: Broker Database | Complete |
 | BRKR-06 | Phase 3: Broker Database | Complete |
-| TMPL-01 | Phase 4: Email Templates | Pending |
-| TMPL-02 | Phase 4: Email Templates | Pending |
-| TMPL-03 | Phase 4: Email Templates | Pending |
-| TMPL-04 | Phase 4: Email Templates | Pending |
+| TMPL-01 | Phase 4: Email Templates | Complete |
+| TMPL-02 | Phase 4: Email Templates | Complete |
+| TMPL-03 | Phase 4: Email Templates | Complete |
+| TMPL-04 | Phase 4: Email Templates | Complete |
 | TMPL-05 | Phase 4: Email Templates | Pending |
-| TMPL-06 | Phase 4: Email Templates | Pending |
+| TMPL-06 | Phase 4: Email Templates | Complete |
 | SEND-01 | Phase 5: Sending and Status Tracking | Pending |
 | SEND-02 | Phase 5: Sending and Status Tracking | Pending |
 | SEND-03 | Phase 5: Sending and Status Tracking | Pending |
