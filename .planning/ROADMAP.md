@@ -13,8 +13,8 @@ ErasureKit delivers a portable, zero-server GDPR erasure tool through 8 phases f
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: App Shell and Distribution** - Validate Preact + HTM + Vite architecture with two-mode dev/build workflow (completed 2026-03-28)
-- [x] **Phase 2: Identity Input and Persistence** - Users can enter personal data and save/load campaign progress (completed 2026-03-29)
-- [x] **Phase 3: Broker Database** - Users can browse, search, filter, and select data brokers from the compiled database (completed 2026-03-29)
+- [x] **Phase 2: Identity Input and Persistence** - Users can enter personal data and save/load campaign progress (completed 2026-03-29)
+- [x] **Phase 3: Broker Database** - Users can browse, search, filter, and select data brokers from the compiled database (completed 2026-03-29)
 - [ ] **Phase 4: Email Templates** - App generates legally accurate, region-aware GDPR erasure request emails
 - [ ] **Phase 5: Sending and Status Tracking** - Users can send erasure requests and track per-broker status with a campaign dashboard
 - [ ] **Phase 6: Temp Email Monitoring** - App monitors broker responses via a temporary mail.tm inbox
@@ -75,7 +75,10 @@ Plans:
   2. Templates vary by broker region: strict GDPR for EU/EEA, UK GDPR for UK brokers, CCPA language for US brokers
   3. Templates include the user's identity information (name + email addresses) as entered in the identity form
   4. User can preview the generated email text for any selected broker and copy it to clipboard
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 04-01-PLAN.md — Template engine (GDPR/UK-GDPR/CCPA generators, unit tests), campaign schema v2 with templates field, clipboard utility
+- [ ] 04-02-PLAN.md — Template UI (TemplateDrawer, TemplateSidebar with edit/copy/reset), Brokers page integration, human verification
 
 ### Phase 5: Sending and Status Tracking
 **Goal**: Users can send erasure requests to all selected brokers via mailto: links and track each broker's status through a lifecycle with a dashboard showing campaign-wide progress
@@ -136,7 +139,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 1. App Shell and Distribution | 2/2 | Complete   | 2026-03-28 |
 | 2. Identity Input and Persistence | 3/3 | Complete   | 2026-03-29 |
 | 3. Broker Database | 1/1 | Complete   | 2026-03-29 |
-| 4. Email Templates | 0/0 | Not started | - |
+| 4. Email Templates | 0/2 | Planned | - |
 | 5. Sending and Status Tracking | 0/0 | Not started | - |
 | 6. Temp Email Monitoring | 0/0 | Not started | - |
 | 7. Legal Reference | 0/0 | Not started | - |
