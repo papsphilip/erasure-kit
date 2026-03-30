@@ -48,14 +48,14 @@ describe('campaign', () => {
   describe('createEmptyCampaign', () => {
     it('returns object with correct schema', () => {
       const empty = createEmptyCampaign();
-      expect(empty.version).toBe(1);
+      expect(empty.version).toBe(2);
       expect(empty.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
       expect(empty.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
       expect(empty.identity.fullName).toBe('');
       expect(empty.identity.emails).toEqual(['']);
       expect(empty.identity.phone).toBe('');
       expect(empty.identity.address).toBe('');
-      expect(empty.brokers).toEqual({ selected: [] });
+      expect(empty.brokers).toEqual({ selected: [], templates: {} });
       expect(empty.tempEmail).toBe(null);
       expect(empty.messages).toEqual([]);
       expect(empty.statuses).toEqual({});
@@ -132,7 +132,7 @@ describe('campaign', () => {
       expect(result.identity.fullName).toBe('Test User');
       expect(result.identity.emails).toEqual(['']);
       expect(result.identity.phone).toBe('');
-      expect(result.brokers).toEqual({ selected: [] });
+      expect(result.brokers).toEqual({ selected: [], templates: {} });
       expect(result.tempEmail).toBe(null);
       expect(result.messages).toEqual([]);
       expect(result.statuses).toEqual({});
@@ -171,6 +171,31 @@ describe('campaign', () => {
       expect(result.identity.emails).toEqual(['test@example.com', 'other@example.com']);
       expect(result.identity.phone).toBe('');
       expect(result.identity.address).toBe('');
+    });
+
+    it('migrates v1 campaign adding templates field to brokers', () => {
+      const v1Campaign = {
+        version: 1,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        identity: { fullName: 'Test User', emails: ['test@example.com'], phone: '', address: '' },
+        brokers: { selected: ['acxiom', 'oracle'] },
+      };
+      const result = migrateCampaign(v1Campaign);
+      expect(result).not.toBe(null);
+      expect(result.version).toBe(2);
+      expect(result.brokers.selected).toEqual(['acxiom', 'oracle']);
+      expect(result.brokers.templates).toEqual({});
+    });
+
+    it('preserves existing templates when migrating v2 campaign', () => {
+      const v2Campaign = {
+        version: 2,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        identity: { fullName: 'Test User', emails: ['test@example.com'], phone: '', address: '' },
+        brokers: { selected: ['acxiom'], templates: { acxiom: { body: 'Custom text', editedAt: '2026-03-30T12:00:00.000Z' } } },
+      };
+      const result = migrateCampaign(v2Campaign);
+      expect(result.brokers.templates.acxiom.body).toBe('Custom text');
     });
   });
 
