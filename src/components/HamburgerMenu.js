@@ -6,6 +6,7 @@ import { navigateTo } from '../lib/router.js';
 const isOpen = signal(false);
 
 const MENU_ITEMS = [
+  { label: 'Home', page: 'welcome' },
   { label: 'Legal Reference', page: 'legal' },
   { label: 'Escalation', page: 'escalation' },
   { label: 'About', page: 'about' },

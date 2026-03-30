@@ -32,9 +32,12 @@ async function handleLoad() {
  */
 export function Header() {
   return html`
-    <div>
-      <header class="sticky top-0 z-30 h-14 flex items-center justify-between px-4 bg-[var(--ek-surface-alt)] border-b border-[var(--ek-border)]">
-        <span class="text-xl font-semibold text-[var(--ek-primary)]">ErasureKit</span>
+    <div class="sticky top-0 z-30">
+      <header class="h-14 flex items-center justify-between px-4 bg-[var(--ek-surface-alt)] border-b border-[var(--ek-border)]">
+        <button
+          onClick=${() => { import('../lib/router.js').then(r => r.navigateTo('welcome')); }}
+          class="text-xl font-semibold text-[var(--ek-primary)] hover:opacity-80 transition-opacity cursor-pointer bg-transparent border-none outline-none focus-visible:ring-2 focus-visible:ring-sky-500 rounded"
+        >ErasureKit</button>
         <div class="flex items-center gap-1">
           <button
             onClick=${saveCampaignToFile}

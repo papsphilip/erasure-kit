@@ -31,6 +31,12 @@ export function Footer() {
       </div>
       <div class="flex items-center gap-4">
         <button
+          onClick=${() => navigateTo('welcome')}
+          class="hover:text-[var(--ek-primary)] transition-colors focus-visible:ring-2 focus-visible:ring-sky-500 rounded outline-none"
+        >
+          Home
+        </button>
+        <button
           onClick=${() => navigateTo('legal')}
           class="hover:text-[var(--ek-primary)] transition-colors focus-visible:ring-2 focus-visible:ring-sky-500 rounded outline-none"
         >

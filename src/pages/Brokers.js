@@ -275,83 +275,83 @@ export function Brokers() {
 
   return html`
     <div class="max-w-4xl mx-auto px-4 py-8 transition-all duration-200 ${sidebarOpen.value ? 'sm:mr-[420px] lg:mr-[480px]' : ''}">
-      <div class="rounded-xl bg-[var(--ek-surface-alt)] shadow-lg overflow-hidden">
 
-        ${/* ── Sticky Toolbar (D-06, D-07) ──────────────────────── */''}
-        <div class="sticky top-0 z-10 bg-[var(--ek-surface-alt)] border-b border-[var(--ek-border)] p-4 space-y-3">
+      ${/* ── Sticky Toolbar (D-06, D-07) — outside card so sticky works ── */''}
+      <div class="sticky top-[100px] z-10 bg-[var(--ek-surface-alt)] rounded-t-xl border border-b-0 border-[var(--ek-border)] p-4 space-y-3">
 
-          ${/* ── Header ──────────────────────────────────────────── */''}
-          <div class="flex items-center justify-between">
-            <h2 class="text-xl font-semibold text-[var(--ek-text)]">Select Brokers</h2>
-            ${selCount > 0 && html`
-              <button
-                type="button"
-                class="text-sm text-[var(--ek-text-muted)] hover:text-[var(--ek-danger)] transition-colors duration-150"
-                onClick=${deselectAllBrokers}
-              >
-                ${selCount} selected
-                <span class="ml-1">\u00D7</span>
-              </button>
-            `}
-          </div>
-
-          ${/* ── Search + Filters Row ──────────────────────────── */''}
-          <div class="flex flex-wrap gap-2">
-            <div class="relative flex-1 min-w-[200px]">
-              <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                <${SearchIcon} />
-              </div>
-              <input
-                type="text"
-                placeholder="Search brokers..."
-                class="w-full h-10 pl-9 pr-3 rounded-lg bg-[var(--ek-surface)] border border-[var(--ek-border)] text-[var(--ek-text)] placeholder:text-[var(--ek-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ek-primary)] text-sm"
-                value=${searchQuery.value}
-                onInput=${(e) => { searchQuery.value = e.target.value; }}
-              />
-            </div>
-            <select
-              class="h-10 px-3 rounded-lg bg-[var(--ek-surface)] border border-[var(--ek-border)] text-[var(--ek-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ek-primary)] cursor-pointer"
-              value=${regionFilter.value}
-              onChange=${(e) => { regionFilter.value = e.target.value; }}
+        ${/* ── Header ──────────────────────────────────────────── */''}
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold text-[var(--ek-text)]">Select Brokers</h2>
+          ${selCount > 0 && html`
+            <button
+              type="button"
+              class="text-sm text-[var(--ek-text-muted)] hover:text-[var(--ek-danger)] transition-colors duration-150"
+              onClick=${deselectAllBrokers}
             >
-              <option value="">All Regions</option>
-              ${regions.value.map((r) => html`<option value=${r}>${r}</option>`)}
-            </select>
-            <select
-              class="h-10 px-3 rounded-lg bg-[var(--ek-surface)] border border-[var(--ek-border)] text-[var(--ek-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ek-primary)] cursor-pointer"
-              value=${categoryFilter.value}
-              onChange=${(e) => { categoryFilter.value = e.target.value; }}
-            >
-              <option value="">All Categories</option>
-              ${categories.value.map((c) => html`<option value=${c}>${c}</option>`)}
-            </select>
-          </div>
+              ${selCount} selected
+              <span class="ml-1">\u00D7</span>
+            </button>
+          `}
+        </div>
 
-          ${/* ── Status Bar (D-10, D-11) ──────────────────────── */''}
-          <div class="flex items-center justify-between text-xs text-[var(--ek-text-muted)]">
-            <div class="flex items-center gap-3">
-              <span>Showing ${visible.length} of ${total} brokers</span>
-              ${hasActiveFilters.value && html`
-                <button
-                  type="button"
-                  class="text-[var(--ek-primary)] hover:underline"
-                  onClick=${handleClearFilters}
-                >\u00D7 Clear filters</button>
-              `}
+        ${/* ── Search + Filters Row ──────────────────────────── */''}
+        <div class="flex flex-wrap gap-2">
+          <div class="relative flex-1 min-w-[200px]">
+            <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+              <${SearchIcon} />
             </div>
-            ${visible.length > 0 && !allVisibleSelected.value && html`
+            <input
+              type="text"
+              placeholder="Search brokers..."
+              class="w-full h-10 pl-9 pr-3 rounded-lg bg-[var(--ek-surface)] border border-[var(--ek-border)] text-[var(--ek-text)] placeholder:text-[var(--ek-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ek-primary)] text-sm"
+              value=${searchQuery.value}
+              onInput=${(e) => { searchQuery.value = e.target.value; }}
+            />
+          </div>
+          <select
+            class="h-10 px-3 rounded-lg bg-[var(--ek-surface)] border border-[var(--ek-border)] text-[var(--ek-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ek-primary)] cursor-pointer"
+            value=${regionFilter.value}
+            onChange=${(e) => { regionFilter.value = e.target.value; }}
+          >
+            <option value="">All Regions</option>
+            ${regions.value.map((r) => html`<option value=${r}>${r}</option>`)}
+          </select>
+          <select
+            class="h-10 px-3 rounded-lg bg-[var(--ek-surface)] border border-[var(--ek-border)] text-[var(--ek-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ek-primary)] cursor-pointer"
+            value=${categoryFilter.value}
+            onChange=${(e) => { categoryFilter.value = e.target.value; }}
+          >
+            <option value="">All Categories</option>
+            ${categories.value.map((c) => html`<option value=${c}>${c}</option>`)}
+          </select>
+        </div>
+
+        ${/* ── Status Bar (D-10, D-11) ──────────────────────── */''}
+        <div class="flex items-center justify-between text-xs text-[var(--ek-text-muted)]">
+          <div class="flex items-center gap-3">
+            <span>Showing ${visible.length} of ${total} brokers</span>
+            ${hasActiveFilters.value && html`
               <button
                 type="button"
                 class="text-[var(--ek-primary)] hover:underline"
-                onClick=${handleSelectAllVisible}
-              >Select all ${visible.length} visible</button>
+                onClick=${handleClearFilters}
+              >\u00D7 Clear filters</button>
             `}
           </div>
+          ${visible.length > 0 && !allVisibleSelected.value && html`
+            <button
+              type="button"
+              class="text-[var(--ek-primary)] hover:underline"
+              onClick=${handleSelectAllVisible}
+            >Select all ${visible.length} visible</button>
+          `}
         </div>
+      </div>
 
-        ${/* ── Template Drawer (Phase 4) ──────────────────────── */''}
-        <${TemplateDrawer} />
+      ${/* ── Template Drawer (Phase 4) ──────────────────────── */''}
+      <${TemplateDrawer} />
 
+      <div class="rounded-b-xl bg-[var(--ek-surface-alt)] shadow-lg border border-t-0 border-[var(--ek-border)] overflow-hidden">
         ${/* ── Table ──────────────────────────────────────────── */''}
         ${visible.length === 0
           ? html`

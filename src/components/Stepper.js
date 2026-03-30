@@ -16,7 +16,7 @@ const STEPS = [
  */
 export function Stepper() {
   return html`
-    <nav class="flex items-center justify-center gap-2 py-3 px-4 bg-[var(--ek-surface-alt)] border-b border-[var(--ek-border)]" aria-label="Progress">
+    <nav class="sticky top-14 z-20 flex items-center justify-center gap-2 py-3 px-4 bg-[var(--ek-surface-alt)] border-b border-[var(--ek-border)]" aria-label="Progress">
       ${STEPS.map((step, i) => {
         const isCurrent = currentPage.value === step.id;
         const isCompleted = completedSteps.value.has(step.id);
