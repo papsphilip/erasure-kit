@@ -17,6 +17,8 @@ One-click automated data erasure across all known brokers without exposing the u
 - [x] Zero build-step dev mode with CDN-loaded modules *(Validated in Phase 1)*
 - [x] Minimal identity input: name + email(s) to erase. Optional: phone, address *(Validated in Phase 2: Identity Input and Persistence)*
 - [x] Save/load progress to local JSON file via File System API *(Validated in Phase 2)*
+- [x] Comprehensive broker database compiled from all open-source GitHub broker lists (100+ brokers) *(Validated in Phase 3: Broker Database)*
+- [x] Region-aware email templates (strict GDPR for UK/EU, CCPA/broader for US brokers) *(Validated in Phase 4: Email Templates)*
 
 ### Active
 
@@ -28,13 +30,10 @@ One-click automated data erasure across all known brokers without exposing the u
 - [ ] Notify user when brokers are overdue (past 30-day deadline)
 - [ ] Pre-filled escalation templates for overdue brokers (follow-up warning + DPA complaint)
 - [ ] Delete temp email account after all brokers have responded
-- [ ] Separate `brokers.json` file — user-editable, community-expandable, imported by the app
-- [ ] Comprehensive broker database compiled from all open-source GitHub broker lists (100+ brokers)
 - [ ] Legal reference page: full GDPR Article 17 text with plain-English explanations
 - [ ] Legal reference page: identity verification guide (what to share, how to push back)
 - [ ] Legal reference page: country-specific Data Protection Authorities with complaint links
 - [ ] Legal reference page: escalation email templates and DPA complaint letters
-- [ ] Region-aware email templates (strict GDPR for UK/EU, CCPA/broader for US brokers)
 - [ ] Dashboard showing overall stats: sent, responded, overdue, completed
 - [ ] Per-broker status tracking: pending → sent → awaiting response → completed/escalated
 
@@ -100,4 +99,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-29 after Phase 2 completion*
+*Last updated: 2026-03-30 after Phase 4 completion*
