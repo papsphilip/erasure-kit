@@ -1,22 +1,20 @@
 ---
 scope: tools/erasure-kit
 status: paused
-phase: "Phase 5 discuss in progress — 2 of 4 areas done (Send layout, Batch UX)"
-gsd_command: "gsd:discuss-phase 5"
-last_updated: "2026-03-30"
+phase: "Phase 5 context complete — 60 decisions, ready for plan"
+gsd_command: "gsd:plan-phase 5"
+last_updated: "2026-03-31"
 ---
 
 # Continue Here — ErasureKit
 
 ## Resume Instructions
 
-Phase 5 discuss-phase is **halfway done**. Two areas captured, two remaining.
+Phase 5 discuss-phase is **complete**. 60 decisions captured across 9 areas including a major architecture pivot: automated temp-email sending (no mailto:), Brokers+Send page merge (3-step stepper), sidebar replaced with modal.
 
-**Next step:** `/gsd:discuss-phase 5` — when prompted that context exists, choose "Update it". Then discuss the remaining two areas:
-1. **Campaign dashboard** — where the progress dashboard lives, what stats/visuals it shows
-2. **Status lifecycle** — how statuses transition, overdue flags, manual status changes
+**Next step:** `/gsd:plan-phase 5`
 
-The WIP context file is at `.planning/phases/05-sending-and-status-tracking/05-CONTEXT-WIP.md` — read it to see decisions captured so far (D-01 through D-12).
+Context file: `.planning/phases/05-sending-and-status-tracking/05-CONTEXT.md`
 
 ## What's Built
 
