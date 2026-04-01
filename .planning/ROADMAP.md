@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Identity Input and Persistence** - Users can enter personal data and save/load campaign progress (completed 2026-03-29)
 - [x] **Phase 3: Broker Database** - Users can browse, search, filter, and select data brokers from the compiled database (completed 2026-03-29)
 - [x] **Phase 4: Email Templates** - App generates legally accurate, region-aware GDPR erasure request emails (completed 2026-03-30)
-- [ ] **Phase 5: Sending and Status Tracking** - Users can send erasure requests and track per-broker status with a campaign dashboard
+- [x] **Phase 5: Sending and Status Tracking** - Users can send erasure requests and track per-broker status with a campaign dashboard (completed 2026-04-01)
 - [ ] **Phase 6: Temp Email Monitoring** - App monitors broker responses via a temporary mail.tm inbox
 - [ ] **Phase 7: Legal Reference** - Users can access GDPR legal text, identity verification guidance, and DPA directory
 - [ ] **Phase 8: Escalation** - Users can generate follow-up warnings and DPA complaint letters for non-responsive brokers
@@ -90,7 +90,9 @@ Plans:
   3. When a template exceeds ~2000 characters (mailto: URL limit), the app automatically falls back to clipboard copy with clear instructions
   4. Each broker displays its current status (not selected / selected / sent / awaiting response / confirmed / rejected / escalated / overdue) and the status updates correctly through the lifecycle
   5. Dashboard shows aggregate campaign stats (total brokers, selected, sent, awaiting, confirmed, rejected, overdue) and overall progress percentage
-**Plans**: TBD
+**Plans:** 1/1 plans complete
+Plans:
+- [x] 05-01-PLAN.md -- Sending infrastructure, status tracking data model, stepper refactoring, modal, sticky send bar, Track page dashboard
 **UI hint**: yes
 
 ### Phase 6: Temp Email Monitoring
@@ -140,7 +142,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 2. Identity Input and Persistence | 3/3 | Complete   | 2026-03-29 |
 | 3. Broker Database | 1/1 | Complete   | 2026-03-29 |
 | 4. Email Templates | 2/2 | Complete   | 2026-03-30 |
-| 5. Sending and Status Tracking | 0/0 | Not started | - |
+| 5. Sending and Status Tracking | 1/1 | Complete   | 2026-04-01 |
 | 6. Temp Email Monitoring | 0/0 | Not started | - |
 | 7. Legal Reference | 0/0 | Not started | - |
 | 8. Escalation | 0/0 | Not started | - |
