@@ -9,13 +9,13 @@ import {
   deselectAllBrokers,
 } from '../lib/campaign.js';
 import { navigateTo, markStepComplete } from '../lib/router.js';
-import { TemplateDrawer } from '../components/TemplateDrawer.js';
-import { TemplateSidebar, openSidebar, sidebarOpen } from '../components/TemplateSidebar.js';
+import { TemplateModal, openModal } from '../components/TemplateModal.js';
+import { getBrokerStatusValue, STATUS } from '../lib/status-tracker.js';
 
 // ── Local UI State (signals -- not persisted) ────────────────────────────────
 
 /** All brokers loaded from brokers.json */
-const allBrokers = signal([]);
+export const allBrokers = signal([]);
 
 /** Whether brokers are still loading */
 const loading = signal(true);
@@ -113,6 +113,20 @@ const selectedIds = computed(() => new Set(campaign.value.brokers.selected || []
 /** Number of selected brokers */
 const selectedCount = computed(() => selectedIds.value.size);
 
+/** Count of brokers that have been sent (awaiting or resolved) */
+const sentCount = computed(() => {
+  const statuses = campaign.value.statuses || {};
+  const selected = campaign.value.brokers.selected || [];
+  let count = 0;
+  for (const id of selected) {
+    const entry = statuses[id];
+    if (entry && entry.status !== STATUS.SELECTED && entry.status !== STATUS.NOT_SELECTED) {
+      count++;
+    }
+  }
+  return count;
+});
+
 /** Whether any filter is active */
 const hasActiveFilters = computed(
   () => searchQuery.value.trim() !== '' || regionFilter.value !== '' || categoryFilter.value !== ''
@@ -162,8 +176,14 @@ function handleContinue() {
   navigateTo('track');
 }
 
-function handleToggleExpand(brokerId) {
+function handleToggleExpand(e, brokerId) {
+  e.stopPropagation();
   expandedRow.value = expandedRow.value === brokerId ? null : brokerId;
+}
+
+function handleRowClick(broker) {
+  // D-17: Click broker row = open modal
+  openModal(broker.id, filteredBrokers.value);
 }
 
 // ── SVG Icons ────────────────────────────────────────────────────────────────
@@ -222,11 +242,18 @@ function ExternalLinkIcon() {
   `;
 }
 
-function PreviewIcon() {
+function SendEnvelopeIcon() {
   return html`
     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    </svg>
+  `;
+}
+
+function CheckIcon() {
+  return html`
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
     </svg>
   `;
 }
@@ -241,11 +268,11 @@ function truncateEmail(email, maxLen = 28) {
 // ── Brokers Page Component ───────────────────────────────────────────────────
 
 /**
- * Brokers page: search, filter, sort, select/deselect brokers from the database.
- * Displays as a compact table with expandable rows (D-01 through D-16).
+ * Brokers page: search, filter, sort, select/deselect brokers.
+ * Click row = open modal (D-17). Chevron = expand inline details (D-23).
+ * Checkbox stops propagation (D-17).
  */
 export function Brokers() {
-  // Trigger broker loading on first render
   ensureBrokersLoaded();
 
   if (loading.value) {
@@ -271,15 +298,16 @@ export function Brokers() {
   const visible = filteredBrokers.value;
   const total = allBrokers.value.length;
   const selCount = selectedCount.value;
+  const sent = sentCount.value;
   const canContinue = selCount > 0;
 
   return html`
-    <div class="max-w-4xl mx-auto px-4 py-8 transition-all duration-200 ${sidebarOpen.value ? 'sm:mr-[420px] lg:mr-[480px]' : ''}">
+    <div class="max-w-4xl mx-auto px-4 py-8">
 
-      ${/* ── Sticky Toolbar (D-06, D-07) — outside card so sticky works ── */''}
+      ${/* ── Sticky Toolbar ── */''}
       <div class="sticky top-[100px] z-10 bg-[var(--ek-surface-alt)] rounded-t-xl border border-b-0 border-[var(--ek-border)] p-4 space-y-3">
 
-        ${/* ── Header ──────────────────────────────────────────── */''}
+        ${/* ── Header ── */''}
         <div class="flex items-center justify-between">
           <h2 class="text-xl font-semibold text-[var(--ek-text)]">Select Brokers</h2>
           ${selCount > 0 && html`
@@ -294,7 +322,7 @@ export function Brokers() {
           `}
         </div>
 
-        ${/* ── Search + Filters Row ──────────────────────────── */''}
+        ${/* ── Search + Filters Row ── */''}
         <div class="flex flex-wrap gap-2">
           <div class="relative flex-1 min-w-[200px]">
             <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
@@ -326,7 +354,7 @@ export function Brokers() {
           </select>
         </div>
 
-        ${/* ── Status Bar (D-10, D-11) ──────────────────────── */''}
+        ${/* ── Status Bar ── */''}
         <div class="flex items-center justify-between text-xs text-[var(--ek-text-muted)]">
           <div class="flex items-center gap-3">
             <span>Showing ${visible.length} of ${total} brokers</span>
@@ -348,11 +376,8 @@ export function Brokers() {
         </div>
       </div>
 
-      ${/* ── Template Drawer (Phase 4) ──────────────────────── */''}
-      <${TemplateDrawer} />
-
       <div class="rounded-b-xl bg-[var(--ek-surface-alt)] shadow-lg border border-t-0 border-[var(--ek-border)] overflow-hidden">
-        ${/* ── Table ──────────────────────────────────────────── */''}
+        ${/* ── Table ── */''}
         ${visible.length === 0
           ? html`
             <div class="px-4 py-16 text-center">
@@ -382,7 +407,7 @@ export function Brokers() {
                     <th class="px-3 py-3 text-[var(--ek-text-muted)] font-medium hidden md:table-cell">Email</th>
                     <${SortableHeader} label="Region" col="region" extraClass="hidden sm:table-cell" />
                     <${SortableHeader} label="Category" col="category" extraClass="hidden lg:table-cell" />
-                    <th class="w-10 px-2 py-3"></th>
+                    <th class="w-16 px-2 py-3"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -395,8 +420,13 @@ export function Brokers() {
           `
         }
 
-        ${/* ── Continue Button (D-16) ─────────────────────────── */''}
-        <div class="p-4 border-t border-[var(--ek-border)]">
+        ${/* ── Sticky Bottom Bar (D-08) ── */''}
+        <div class="sticky bottom-0 p-4 border-t border-[var(--ek-border)] bg-[var(--ek-surface-alt)]">
+          ${selCount > 0 && html`
+            <div class="flex items-center justify-between mb-2 text-sm text-[var(--ek-text-muted)]">
+              <span>${selCount} selected${sent > 0 ? html` \u00B7 <span class="text-emerald-500">${sent} sent</span>` : ''}</span>
+            </div>
+          `}
           <button
             type="button"
             class="w-full h-12 rounded-lg font-semibold text-white transition-all duration-150 ${
@@ -415,8 +445,8 @@ export function Brokers() {
         </div>
       </div>
 
-      ${/* ── Template Sidebar (Phase 4 -- fixed position, outside card flow) ── */''}
-      <${TemplateSidebar} brokers=${allBrokers.value} />
+      ${/* ── Template Modal (replaces sidebar, D-16) ── */''}
+      <${TemplateModal} />
     </div>
   `;
 }
@@ -446,12 +476,18 @@ function BrokerRow({ broker }) {
   const isExpanded = expandedRow.value === broker.id;
   const tempBlocked = broker.tempEmailAccepted === false;
 
+  // D-11: Check if broker has been sent
+  const brokerStatus = getBrokerStatusValue(broker.id);
+  const isSent = brokerStatus === STATUS.AWAITING || brokerStatus === STATUS.CONFIRMED ||
+    brokerStatus === STATUS.REJECTED || brokerStatus === STATUS.OVERDUE || brokerStatus === STATUS.ESCALATED;
+
   return html`
     <tr
       class="border-b border-[var(--ek-border)] transition-colors duration-100 cursor-pointer ${
+        isSent ? 'opacity-60 bg-emerald-500/5' :
         isSelected ? 'bg-[var(--ek-primary)]/8' : 'hover:bg-[var(--ek-surface)]/50'
       }"
-      onClick=${() => handleToggleExpand(broker.id)}
+      onClick=${() => handleRowClick(broker)}
     >
       <td class="px-4 py-3" onClick=${(e) => e.stopPropagation()}>
         <input
@@ -473,6 +509,9 @@ function BrokerRow({ broker }) {
               </span>
             </span>
           `}
+          ${isSent && html`
+            <span class="text-xs px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-500 font-medium">Sent</span>
+          `}
         </div>
       </td>
       <td class="px-3 py-3 text-[var(--ek-text-muted)] hidden md:table-cell">
@@ -482,20 +521,31 @@ function BrokerRow({ broker }) {
       <td class="px-3 py-3 text-[var(--ek-text-muted)] hidden lg:table-cell">${broker.category}</td>
       <td class="px-2 py-3 text-[var(--ek-text-muted)]">
         <div class="flex items-center gap-1">
-          ${isSelected && html`
-            <button
-              type="button"
-              class="relative group p-1 text-[var(--ek-primary)] hover:text-[var(--ek-primary-hover)] transition-colors duration-150"
-              onClick=${(e) => { e.stopPropagation(); openSidebar(broker.id); }}
-              aria-label="Preview template for ${broker.name}"
-            >
-              <${PreviewIcon} />
-              <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs bg-[var(--ek-surface)] text-[var(--ek-text)] border border-[var(--ek-border)] rounded shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-20">
-                Preview template
+          ${/* D-09: Per-broker send icon (envelope or checkmark) */''}
+          ${isSent
+            ? html`
+              <span class="relative group p-1 text-emerald-500">
+                <${CheckIcon} />
+                <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs bg-[var(--ek-surface)] text-[var(--ek-text)] border border-[var(--ek-border)] rounded shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-20">
+                  Sent - click to re-send
+                </span>
               </span>
-            </button>
-          `}
-          <${ChevronDownIcon} open=${isExpanded} />
+            `
+            : html`
+              <span class="relative group p-1 text-[var(--ek-text-muted)]">
+                <${SendEnvelopeIcon} />
+              </span>
+            `
+          }
+          ${/* D-23: Chevron for inline expand */''}
+          <button
+            type="button"
+            class="p-1 text-[var(--ek-text-muted)] hover:text-[var(--ek-text)] transition-colors duration-150"
+            onClick=${(e) => handleToggleExpand(e, broker.id)}
+            aria-label="${isExpanded ? 'Collapse' : 'Expand'} details for ${broker.name}"
+          >
+            <${ChevronDownIcon} open=${isExpanded} />
+          </button>
         </div>
       </td>
     </tr>
