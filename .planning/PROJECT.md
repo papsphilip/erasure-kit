@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A free, open-source portable web app that automates GDPR Article 17 data erasure requests for Europeans. Users enter minimal identity info, the app creates a temporary email address, sends legally-compliant erasure requests to all known data brokers in one click, monitors responses, tracks 30-day compliance deadlines, and flags overdue brokers. Once all brokers respond, the temp email is deleted. No servers, no accounts, no tracking — everything runs in the browser.
+A free, open-source GDPR Article 17 data erasure tool for Europeans. Users enter minimal identity info, click "Send All", and the app automatically sends legally-compliant erasure requests to all selected data brokers via a relay network. Each user gets a random temporary email address (e.g. `a7k9x@erasurekit.uk`) so their real email is never exposed to brokers. The app monitors broker responses, tracks 30-day compliance deadlines, and flags overdue brokers. Everything is end-to-end encrypted — even the domain owner cannot read user emails.
 
 ## Core Value
 
@@ -20,32 +20,32 @@ One-click automated data erasure across all known brokers without exposing the u
 - [x] Comprehensive broker database compiled from all open-source GitHub broker lists (100+ brokers) *(Validated in Phase 3: Broker Database)*
 - [x] Region-aware email templates (strict GDPR for UK/EU, CCPA/broader for US brokers) *(Validated in Phase 4: Email Templates)*
 
-### Active
+### Active (v2.0 — Relay-Based Email Architecture)
 
-- [ ] Auto-create temporary email address via free API (mail.tm or equivalent) — no user setup
-- [ ] Send GDPR Article 17 erasure requests to all selected brokers from the temp email in one click
-- [ ] Fully automated email monitoring — poll temp inbox for broker responses
+- [ ] Cloudflare Worker relay that sends emails via Resend API from temp `@erasurekit.uk` addresses
+- [ ] "Send All" button that dispatches all selected brokers in automated batches
+- [ ] Quota-aware batching with calendar UI showing send schedule across days
+- [ ] Relay registry with load balancing across contributor-donated domains
+- [ ] End-to-end encryption — domain owner cannot read user emails
+- [ ] Automatic reply monitoring via Cloudflare Email Routing
+- [ ] Campaign resume across sessions (queued emails pick up automatically)
+- [ ] Contributor donation flow — $2/year domain to increase relay capacity
+- [ ] Privacy transparency on About page — full architecture explanation
 - [ ] Track 30-day GDPR compliance deadline per broker
 - [ ] Detect and categorize broker responses (confirmation, rejection, request for more info)
 - [ ] Notify user when brokers are overdue (past 30-day deadline)
 - [ ] Pre-filled escalation templates for overdue brokers (follow-up warning + DPA complaint)
-- [ ] Delete temp email account after all brokers have responded
-- [ ] Legal reference page: full GDPR Article 17 text with plain-English explanations
-- [ ] Legal reference page: identity verification guide (what to share, how to push back)
-- [ ] Legal reference page: country-specific Data Protection Authorities with complaint links
-- [ ] Legal reference page: escalation email templates and DPA complaint letters
+- [ ] Legal reference page: GDPR Article 17 text, identity verification guide, DPA directory
 - [ ] Dashboard showing overall stats: sent, responded, overdue, completed
-- [ ] Per-broker status tracking: pending → sent → awaiting response → completed/escalated
 
 ### Out of Scope
 
-- Hosting / SaaS deployment — this is a standalone portable app
-- User accounts / authentication — zero tracking, zero server
-- Multi-language i18n — English only for v1, community adds later
+- User accounts / authentication — zero tracking, no signup
+- Multi-language i18n — English only for v2, community adds later
 - Native desktop app (Electron/Tauri) — portable web app only
-- Self-hosted email server — uses free third-party temp email API
 - Automated DPA complaint filing — app generates templates, user files manually
 - Sending from user's real email — the whole point is protecting their real address
+- mailto: links — replaced by relay-based sending in v2.0
 
 ## Context
 
@@ -54,18 +54,27 @@ One-click automated data erasure across all known brokers without exposing the u
 - Identity verification is conditional (Art. 12(6)) — companies can only request proportionate verification, not excessive documents
 - Existing open-source broker databases on GitHub: yaelwrites/big-ass-data-broker-opt-out-list, The Markup dataset, Vermont/California registries, JustVanish, DataBrokerOptOut
 - Distribution model: share with friends for testing → release on GitHub as open-source project
-- No hosting infrastructure — the app is a single portable bundle users open in their browser
-- mail.tm offers a free REST API for creating/reading/deleting temporary email accounts programmatically
+- v1.0 delivered: app shell, identity input, broker database (169 brokers), email templates, status tracking, notification system, demo mode
+- v2.0 replaces mailto: with relay-based sending via Cloudflare Worker + Resend
+
+### Infrastructure (v2.0)
+
+- **Domain:** erasurekit.uk (Cloudflare Registrar, ~$5.30/year)
+- **Project email:** erasurekit@proton.me
+- **Sending:** Resend API (eu-west-1, free tier: 100/day, 3,000/month)
+- **Receiving:** Cloudflare Email Routing (free, unlimited)
+- **Worker:** Cloudflare Workers (free tier: 100K requests/day)
+- **Storage:** Cloudflare KV (free tier: 100K reads/day, 1K writes/day)
+- **Scaling:** Contributors donate $2/year domains, each adds 3,000 emails/month
 
 ## Constraints
 
-- **No server**: Must work entirely client-side. All API calls (temp email, etc.) from browser.
-- **Free APIs only**: Temp email service must be free, no API keys needed for basic usage.
-- **CORS**: Temp email API must allow browser-origin requests, or we need a workaround.
-- **Portable**: Single HTML/JS bundle or small set of static files. No build step for end users.
-- **Privacy**: App must never phone home, track users, or store data externally.
-- **Legal accuracy**: Email templates must cite correct GDPR articles and use legally appropriate language.
-- **File System API**: For local save/load — only works in Chromium browsers (Chrome, Edge, Brave). Fallback: download/upload JSON.
+- **Minimal server**: Cloudflare Worker relay only — no traditional server, no database server
+- **Free tiers**: All infrastructure uses free tiers (Cloudflare Workers, KV, Email Routing, Resend)
+- **Portable frontend**: Single HTML/JS bundle, no build step for end users
+- **Privacy**: End-to-end encrypted — domain owner cannot read user emails. No tracking, no analytics
+- **Legal accuracy**: Email templates must cite correct GDPR articles and use legally appropriate language
+- **File System API**: For local save/load — Chromium browsers. Fallback: download/upload JSON
 
 ## Key Decisions
 
@@ -73,7 +82,11 @@ One-click automated data erasure across all known brokers without exposing the u
 |----------|-----------|---------|
 | Portable web app (not desktop) | No install friction, share via link/file, works everywhere | Validated (Phase 1) |
 | Preact + HTM (not React) | 3KB gzipped, no build step needed for dev, CDN-loadable | Validated (Phase 1) |
-| Temp email via mail.tm API | Free, no API key, REST API, supports create/read/delete | — Pending |
+| Temp email via mail.tm API | Free, no API key, REST API, supports create/read/delete | Superseded by relay architecture (v2.0) |
+| Relay-based sending via Cloudflare Worker + Resend | Automated sending from @erasurekit.uk, no mailto:, no user email exposure | — v2.0 |
+| erasurekit.uk domain | $5.30/year, Cloudflare Registrar, EU region for GDPR alignment | — v2.0 |
+| E2E encryption for user emails | User's browser holds decryption key, domain owner cannot read | — v2.0 |
+| Contributor relay scaling | Each donated domain adds 3,000 emails/month capacity | — v2.0 |
 | Separate brokers.json file | Community can contribute brokers via GitHub PRs without touching app code | Validated (Phase 1) |
 | Local file storage (not localStorage) | Users can backup, transfer, and inspect their progress data | Validated (Phase 2) |
 | English only for v1 | Ship fast, i18n framework can be added later for community translations | — Pending |
@@ -98,5 +111,18 @@ This document evolves at phase transitions and milestone boundaries.
 3. Audit Out of Scope — reasons still valid?
 4. Update Context with current state
 
+## Current Milestone: v2.0 Relay-Based Email Architecture
+
+**Goal:** Replace mailto: with fully automated email sending via a distributed Cloudflare Worker relay network, giving every user a free temporary email address with E2E encrypted response monitoring.
+
+**Target features:**
+- Cloudflare Worker relay (send via Resend API + receive via Email Routing)
+- "Send All" with quota-aware batching and calendar schedule UI
+- E2E encryption — domain owner cannot read user emails
+- Automatic reply monitoring and campaign resume across sessions
+- Contributor relay donation flow for scaling
+- Privacy transparency documentation
+- Legal reference pages and escalation templates
+
 ---
-*Last updated: 2026-03-30 after Phase 4 completion*
+*Last updated: 2026-04-01 — Milestone v2.0 started*

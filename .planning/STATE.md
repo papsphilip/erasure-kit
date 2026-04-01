@@ -1,33 +1,34 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: executing
-stopped_at: Phase 5 context gathered — 60 decisions across 9 areas
-last_updated: "2026-04-01T07:08:52.501Z"
-last_activity: 2026-04-01 -- Phase 05 execution started
+milestone: v2.0
+milestone_name: relay-based-email-architecture
+status: defining_requirements
+stopped_at: null
+last_updated: "2026-04-01T15:00:00.000Z"
+last_activity: 2026-04-01 -- Milestone v2.0 started
 progress:
-  total_phases: 8
-  completed_phases: 3
-  total_plans: 13
-  completed_plans: 8
-  percent: 25
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-28)
+See: .planning/PROJECT.md (updated 2026-04-01)
 
 **Core value:** One-click automated data erasure across all known brokers without exposing the user's real email address.
-**Current focus:** Phase 05 — sending-and-status-tracking
+**Current focus:** Defining requirements for v2.0 relay-based email architecture
 
 ## Current Position
 
-Phase: 05 (sending-and-status-tracking) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 05
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-01 — Milestone v2.0 started
 Last activity: 2026-04-01 -- Phase 05 execution started
 
 Progress: [██░░░░░░░░] 25%
