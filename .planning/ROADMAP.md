@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: App Shell and Distribution** - Validate Preact + HTM + Vite architecture with two-mode dev/build workflow (completed 2026-03-28)
 - [x] **Phase 2: Identity Input and Persistence** - Users can enter personal data and save/load campaign progress (completed 2026-03-29)
 - [x] **Phase 3: Broker Database** - Users can browse, search, filter, and select data brokers from the compiled database (completed 2026-03-29)
-- [x] **Phase 4: Email Templates** - App generates legally accurate, region-aware GDPR erasure request emails (completed 2026-03-30)
+- [x] **Phase 4: Email Templates** - App generates legally accurate, region-aware GDPR erasure request emails (completed 2026-03-30)
 - [ ] **Phase 5: Sending and Status Tracking** - Users can send erasure requests and track per-broker status with a campaign dashboard
 - [ ] **Phase 6: Temp Email Monitoring** - App monitors broker responses via a temporary mail.tm inbox
 - [ ] **Phase 7: Legal Reference** - Users can access GDPR legal text, identity verification guidance, and DPA directory
@@ -81,16 +81,21 @@ Plans:
 - [x] 04-02-PLAN.md — Template UI (TemplateDrawer, TemplateSidebar with edit/copy/reset), Brokers page integration, human verification
 
 ### Phase 5: Sending and Status Tracking
-**Goal**: Users can send erasure requests to all selected brokers via mailto: links and track each broker's status through a lifecycle with a dashboard showing campaign-wide progress
+**Goal**: Users can send erasure requests to all selected brokers via automated EmailJS sending with mailto fallback, and track each broker's status through a lifecycle with a campaign dashboard showing progress
 **Depends on**: Phase 4
 **Requirements**: SEND-01, SEND-02, SEND-03, SEND-04, STAT-01, STAT-02, STAT-03, STAT-04, STAT-05
 **Success Criteria** (what must be TRUE):
-  1. User can click a send button that opens their email client via mailto: with the correct recipient, subject, and pre-filled GDPR template body
-  2. User can batch-send to all selected brokers via sequential mailto: activation, confirming each send
+  1. User can click a send button that sends the erasure request via EmailJS with correct recipient, subject, and pre-filled GDPR template body (mailto fallback for failures)
+  2. User can batch-send to all selected brokers via sequential automated sending with progress display
   3. When a template exceeds ~2000 characters (mailto: URL limit), the app automatically falls back to clipboard copy with clear instructions
   4. Each broker displays its current status (not selected / selected / sent / awaiting response / confirmed / rejected / escalated / overdue) and the status updates correctly through the lifecycle
   5. Dashboard shows aggregate campaign stats (total brokers, selected, sent, awaiting, confirmed, rejected, overdue) and overall progress percentage
-**Plans**: TBD
+**Plans:** 4 plans
+Plans:
+- [ ] 05-01-PLAN.md — Campaign schema v3, status helpers, deadline library (date-fns), email sender library (EmailJS + mailto fallback)
+- [ ] 05-02-PLAN.md — Notification system (toast notifications + bell icon dropdown)
+- [ ] 05-03-PLAN.md — Stepper refactor (4->3 steps), BrokerModal replacing sidebar, Brokers page send integration
+- [ ] 05-04-PLAN.md — Track page campaign dashboard, Identity page EmailJS config, human verification
 **UI hint**: yes
 
 ### Phase 6: Temp Email Monitoring
@@ -140,7 +145,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 2. Identity Input and Persistence | 3/3 | Complete   | 2026-03-29 |
 | 3. Broker Database | 1/1 | Complete   | 2026-03-29 |
 | 4. Email Templates | 2/2 | Complete   | 2026-03-30 |
-| 5. Sending and Status Tracking | 0/0 | Not started | - |
+| 5. Sending and Status Tracking | 0/4 | Planning complete | - |
 | 6. Temp Email Monitoring | 0/0 | Not started | - |
 | 7. Legal Reference | 0/0 | Not started | - |
 | 8. Escalation | 0/0 | Not started | - |
