@@ -47,8 +47,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **STAT-01**: Each broker has a tracked status: not selected → selected → sent → awaiting response → confirmed / rejected / escalated / overdue
 - [ ] **STAT-02**: App calculates "one calendar month" deadline from send date using proper date arithmetic (not naive +30 days)
 - [ ] **STAT-03**: App flags brokers as overdue when they exceed the calendar-month deadline
-- [ ] **STAT-04**: Dashboard shows aggregate stats: total brokers, selected, sent, awaiting, confirmed, rejected, overdue
-- [ ] **STAT-05**: Dashboard shows overall campaign progress as a percentage
+- [x] **STAT-04**: Dashboard shows aggregate stats: total brokers, selected, sent, awaiting, confirmed, rejected, overdue
+- [x] **STAT-05**: Dashboard shows overall campaign progress as a percentage
 
 ### Escalation
 
@@ -162,8 +162,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | STAT-01 | Phase 5: Sending and Status Tracking | Pending |
 | STAT-02 | Phase 5: Sending and Status Tracking | Pending |
 | STAT-03 | Phase 5: Sending and Status Tracking | Pending |
-| STAT-04 | Phase 5: Sending and Status Tracking | Pending |
-| STAT-05 | Phase 5: Sending and Status Tracking | Pending |
+| STAT-04 | Phase 5: Sending and Status Tracking | Complete |
+| STAT-05 | Phase 5: Sending and Status Tracking | Complete |
 | TEMP-01 | Phase 6: Temp Email Monitoring | Pending |
 | TEMP-02 | Phase 6: Temp Email Monitoring | Pending |
 | TEMP-03 | Phase 6: Temp Email Monitoring | Pending |

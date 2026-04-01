@@ -90,10 +90,10 @@ Plans:
   3. When a template exceeds ~2000 characters (mailto: URL limit), the app automatically falls back to clipboard copy with clear instructions
   4. Each broker displays its current status (not selected / selected / sent / awaiting response / confirmed / rejected / escalated / overdue) and the status updates correctly through the lifecycle
   5. Dashboard shows aggregate campaign stats (total brokers, selected, sent, awaiting, confirmed, rejected, overdue) and overall progress percentage
-**Plans:** 4 plans
+**Plans:** 1/4 plans executed
 Plans:
 - [ ] 05-01-PLAN.md — Campaign schema v3, status helpers, deadline library (date-fns), email sender library (EmailJS + mailto fallback)
-- [ ] 05-02-PLAN.md — Notification system (toast notifications + bell icon dropdown)
+- [x] 05-02-PLAN.md — Notification system (toast notifications + bell icon dropdown)
 - [ ] 05-03-PLAN.md — Stepper refactor (4->3 steps), BrokerModal replacing sidebar, Brokers page send integration
 - [ ] 05-04-PLAN.md — Track page campaign dashboard, Identity page EmailJS config, human verification
 **UI hint**: yes
@@ -145,7 +145,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
 | 2. Identity Input and Persistence | 3/3 | Complete   | 2026-03-29 |
 | 3. Broker Database | 1/1 | Complete   | 2026-03-29 |
 | 4. Email Templates | 2/2 | Complete   | 2026-03-30 |
-| 5. Sending and Status Tracking | 0/4 | Planning complete | - |
+| 5. Sending and Status Tracking | 1/4 | In Progress|  |
 | 6. Temp Email Monitoring | 0/0 | Not started | - |
 | 7. Legal Reference | 0/0 | Not started | - |
 | 8. Escalation | 0/0 | Not started | - |
