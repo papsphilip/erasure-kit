@@ -27,10 +27,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Sending
 
-- [ ] **SEND-01**: App sends erasure requests via `mailto:` links that open the user's default email client with pre-filled subject, recipient, and body
-- [ ] **SEND-02**: User can batch-send to all selected brokers via sequential mailto: link activation
-- [ ] **SEND-03**: After each send, user confirms the email was sent and broker status updates to "sent"
-- [ ] **SEND-04**: App handles mailto: URL length limits — if template exceeds ~2000 chars, automatically falls back to clipboard copy with instructions
+- [x] **SEND-01**: App sends erasure requests via `mailto:` links that open the user's default email client with pre-filled subject, recipient, and body *(Validated in Phase 5)*
+- [x] **SEND-02**: User can batch-send to all selected brokers via sequential mailto: link activation *(Validated in Phase 5)*
+- [x] **SEND-03**: After each send, user confirms the email was sent and broker status updates to "sent" *(Validated in Phase 5 — auto-transitions to awaiting per D-37)*
+- [x] **SEND-04**: App handles mailto: URL length limits — if template exceeds ~2000 chars, automatically falls back to clipboard copy with instructions *(Validated in Phase 5)*
 
 ### Temp Email Monitoring
 
@@ -44,11 +44,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Status Tracking
 
-- [ ] **STAT-01**: Each broker has a tracked status: not selected → selected → sent → awaiting response → confirmed / rejected / escalated / overdue
-- [ ] **STAT-02**: App calculates "one calendar month" deadline from send date using proper date arithmetic (not naive +30 days)
-- [ ] **STAT-03**: App flags brokers as overdue when they exceed the calendar-month deadline
-- [ ] **STAT-04**: Dashboard shows aggregate stats: total brokers, selected, sent, awaiting, confirmed, rejected, overdue
-- [ ] **STAT-05**: Dashboard shows overall campaign progress as a percentage
+- [x] **STAT-01**: Each broker has a tracked status: not selected → selected → sent → awaiting response → confirmed / rejected / escalated / overdue *(Validated in Phase 5)*
+- [x] **STAT-02**: App calculates "one calendar month" deadline from send date using proper date arithmetic (not naive +30 days) *(Validated in Phase 5 — uses date-fns addMonths)*
+- [x] **STAT-03**: App flags brokers as overdue when they exceed the calendar-month deadline *(Validated in Phase 5)*
+- [x] **STAT-04**: Dashboard shows aggregate stats: total brokers, selected, sent, awaiting, confirmed, rejected, overdue *(Validated in Phase 5)*
+- [x] **STAT-05**: Dashboard shows overall campaign progress as a percentage *(Validated in Phase 5)*
 
 ### Escalation
 
@@ -155,15 +155,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TMPL-04 | Phase 4: Email Templates | Complete |
 | TMPL-05 | Phase 4: Email Templates | Complete |
 | TMPL-06 | Phase 4: Email Templates | Complete |
-| SEND-01 | Phase 5: Sending and Status Tracking | Pending |
-| SEND-02 | Phase 5: Sending and Status Tracking | Pending |
-| SEND-03 | Phase 5: Sending and Status Tracking | Pending |
-| SEND-04 | Phase 5: Sending and Status Tracking | Pending |
-| STAT-01 | Phase 5: Sending and Status Tracking | Pending |
-| STAT-02 | Phase 5: Sending and Status Tracking | Pending |
-| STAT-03 | Phase 5: Sending and Status Tracking | Pending |
-| STAT-04 | Phase 5: Sending and Status Tracking | Pending |
-| STAT-05 | Phase 5: Sending and Status Tracking | Pending |
+| SEND-01 | Phase 5: Sending and Status Tracking | Complete |
+| SEND-02 | Phase 5: Sending and Status Tracking | Complete |
+| SEND-03 | Phase 5: Sending and Status Tracking | Complete |
+| SEND-04 | Phase 5: Sending and Status Tracking | Complete |
+| STAT-01 | Phase 5: Sending and Status Tracking | Complete |
+| STAT-02 | Phase 5: Sending and Status Tracking | Complete |
+| STAT-03 | Phase 5: Sending and Status Tracking | Complete |
+| STAT-04 | Phase 5: Sending and Status Tracking | Complete |
+| STAT-05 | Phase 5: Sending and Status Tracking | Complete |
 | TEMP-01 | Phase 6: Temp Email Monitoring | Pending |
 | TEMP-02 | Phase 6: Temp Email Monitoring | Pending |
 | TEMP-03 | Phase 6: Temp Email Monitoring | Pending |

@@ -4,12 +4,11 @@ import { currentPage, completedSteps, navigateTo } from '../lib/router.js';
 const STEPS = [
   { id: 'identity', label: 'Identity', number: 1 },
   { id: 'brokers',  label: 'Brokers',  number: 2 },
-  { id: 'send',     label: 'Send',     number: 3 },
-  { id: 'track',    label: 'Track',    number: 4 },
+  { id: 'track',    label: 'Track',    number: 3 },
 ];
 
 /**
- * 4-step wizard navigation with visual progress indicators.
+ * 3-step wizard navigation with visual progress indicators (D-07).
  * All steps are always clickable (free jumping per D-02).
  * Shows circles with numbers, checkmarks for completed steps,
  * and connecting lines between steps.
