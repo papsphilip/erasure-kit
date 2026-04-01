@@ -91,6 +91,12 @@ None yet.
 - [Research gap]: mail.tm CORS from file:// origin not empirically tested — must validate in Phase 1
 - [Research gap]: mailto: URL length limits (~2000 chars) — needs testing in Phase 5
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260401-g81 | Demo mode toggle + Home/About page content | 2026-04-01 | 88209c0 | [260401-g81-demo-mode-toggle-home-about-page-content](./quick/260401-g81-demo-mode-toggle-home-about-page-content/) |
+
 ## Session Continuity
 
 Last session: 2026-03-31T15:58:01.698Z
