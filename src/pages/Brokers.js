@@ -11,6 +11,7 @@ import {
 import { navigateTo, markStepComplete } from '../lib/router.js';
 import { TemplateModal, openModal } from '../components/TemplateModal.js';
 import { getBrokerStatusValue, STATUS } from '../lib/status-tracker.js';
+import { batchSend, getUnsentCount } from '../lib/email-sender.js';
 
 // ── Local UI State (signals -- not persisted) ────────────────────────────────
 
@@ -40,6 +41,18 @@ const sortDirection = signal('asc');
 
 /** ID of the currently expanded row (null = none) */
 const expandedRow = signal(null);
+
+/** Whether the send confirmation dialog is showing (D-12) */
+const showSendConfirm = signal(false);
+
+/** Whether a batch send is in progress */
+const batchSending = signal(false);
+
+/** Batch send progress: { current, total } */
+const batchProgress = signal(null);
+
+/** AbortController for cancelling batch send (D-14) */
+let _batchAbortController = null;
 
 // ── Load brokers on first render ─────────────────────────────────────────────
 
@@ -186,6 +199,58 @@ function handleRowClick(broker) {
   openModal(broker.id, filteredBrokers.value);
 }
 
+/** Show the send confirmation dialog (D-12) */
+function handleSendAllClick() {
+  showSendConfirm.value = true;
+}
+
+/** Cancel the send confirmation dialog */
+function handleCancelSend() {
+  showSendConfirm.value = false;
+}
+
+/** Execute batch send after confirmation (D-02, D-03) */
+async function handleConfirmSend() {
+  showSendConfirm.value = false;
+  batchSending.value = true;
+  batchProgress.value = { current: 0, total: getUnsentCount() };
+
+  _batchAbortController = new AbortController();
+
+  // Get full broker objects for unsent selected brokers
+  const selected = campaign.value.brokers.selected || [];
+  const brokerMap = new Map(allBrokers.value.map((b) => [b.id, b]));
+  const brokersToSend = selected
+    .map((id) => brokerMap.get(id))
+    .filter(Boolean);
+
+  await batchSend(brokersToSend, {
+    delayMs: 1500,
+    signal: _batchAbortController.signal,
+    onProgress: ({ current, total }) => {
+      batchProgress.value = { current, total };
+    },
+    onComplete: () => {
+      batchSending.value = false;
+      batchProgress.value = null;
+      _batchAbortController = null;
+      // D-10: Send All auto-navigates to Track page
+      markStepComplete('brokers');
+      navigateTo('track');
+    },
+  });
+}
+
+/** Stop an in-progress batch send (D-14) */
+function handleStopSending() {
+  if (_batchAbortController) {
+    _batchAbortController.abort();
+    _batchAbortController = null;
+  }
+  batchSending.value = false;
+  batchProgress.value = null;
+}
+
 // ── SVG Icons ────────────────────────────────────────────────────────────────
 
 function SearchIcon() {
@@ -299,7 +364,11 @@ export function Brokers() {
   const total = allBrokers.value.length;
   const selCount = selectedCount.value;
   const sent = sentCount.value;
+  const unsent = getUnsentCount();
   const canContinue = selCount > 0;
+  const identity = campaign.value.identity;
+  const hasIdentity = identity.fullName && identity.fullName.trim() &&
+    identity.emails.some((e) => e && e.trim());
 
   return html`
     <div class="max-w-4xl mx-auto px-4 py-8">
@@ -422,28 +491,88 @@ export function Brokers() {
 
         ${/* ── Sticky Bottom Bar (D-08) ── */''}
         <div class="sticky bottom-0 p-4 border-t border-[var(--ek-border)] bg-[var(--ek-surface-alt)]">
-          ${selCount > 0 && html`
-            <div class="flex items-center justify-between mb-2 text-sm text-[var(--ek-text-muted)]">
-              <span>${selCount} selected${sent > 0 ? html` \u00B7 <span class="text-emerald-500">${sent} sent</span>` : ''}</span>
-            </div>
-          `}
-          <button
-            type="button"
-            class="w-full h-12 rounded-lg font-semibold text-white transition-all duration-150 ${
-              canContinue
-                ? 'bg-[var(--ek-primary)] hover:brightness-90 active:brightness-85 cursor-pointer'
-                : 'bg-[var(--ek-primary)]/40 cursor-not-allowed'
-            }"
-            disabled=${!canContinue}
-            onClick=${canContinue ? handleContinue : undefined}
-          >
-            ${canContinue
-              ? `Continue to Track \u2192 (${selCount} broker${selCount !== 1 ? 's' : ''})`
-              : 'Select at least one broker to continue'
-            }
-          </button>
+          ${batchSending.value && batchProgress.value
+            ? html`
+              ${/* Batch send progress */''}
+              <div class="space-y-2">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-[var(--ek-text)]">
+                    Sending... ${batchProgress.value.current}/${batchProgress.value.total}
+                  </span>
+                  <button
+                    type="button"
+                    class="text-sm text-[var(--ek-danger)] hover:underline"
+                    onClick=${handleStopSending}
+                  >Stop</button>
+                </div>
+                <div class="w-full h-2 bg-[var(--ek-surface)] rounded-full overflow-hidden">
+                  <div
+                    class="h-full bg-[var(--ek-primary)] rounded-full transition-all duration-300"
+                    style="width: ${Math.round((batchProgress.value.current / batchProgress.value.total) * 100)}%"
+                  ></div>
+                </div>
+              </div>
+            `
+            : html`
+              ${selCount > 0 && html`
+                <div class="flex items-center justify-between mb-2 text-sm text-[var(--ek-text-muted)]">
+                  <span>${selCount} selected${sent > 0 ? html` \u00B7 <span class="text-emerald-500">${sent} sent</span>` : ''}</span>
+                  ${unsent > 0 && hasIdentity && html`
+                    <button
+                      type="button"
+                      class="text-sm text-[var(--ek-primary)] hover:underline font-medium"
+                      onClick=${handleSendAllClick}
+                    >${sent > 0 ? `Send Remaining (${unsent})` : `Send All (${unsent})`}</button>
+                  `}
+                </div>
+              `}
+              <button
+                type="button"
+                class="w-full h-12 rounded-lg font-semibold text-white transition-all duration-150 ${
+                  canContinue
+                    ? 'bg-[var(--ek-primary)] hover:brightness-90 active:brightness-85 cursor-pointer'
+                    : 'bg-[var(--ek-primary)]/40 cursor-not-allowed'
+                }"
+                disabled=${!canContinue}
+                onClick=${canContinue ? handleContinue : undefined}
+              >
+                ${canContinue
+                  ? `Continue to Track \u2192 (${selCount} broker${selCount !== 1 ? 's' : ''})`
+                  : 'Select at least one broker to continue'
+                }
+              </button>
+            `
+          }
         </div>
       </div>
+
+      ${/* ── Send Confirmation Dialog (D-12) ── */''}
+      ${showSendConfirm.value && html`
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick=${(e) => { if (e.target === e.currentTarget) handleCancelSend(); }}>
+          <div class="bg-[var(--ek-surface-alt)] rounded-xl shadow-2xl border border-[var(--ek-border)] p-6 max-w-md w-full space-y-4">
+            <h3 class="text-lg font-semibold text-[var(--ek-text)]">Send Erasure Requests</h3>
+            <p class="text-sm text-[var(--ek-text-muted)]">
+              Send erasure requests to <strong class="text-[var(--ek-text)]">${unsent}</strong> brokers via your email client.
+              Each request will open a mailto: link.
+            </p>
+            <p class="text-xs text-[var(--ek-text-muted)]">
+              Templates longer than 2,000 characters will be copied to your clipboard instead.
+            </p>
+            <div class="flex gap-3 justify-end">
+              <button
+                type="button"
+                class="px-4 py-2 rounded-lg text-sm font-medium text-[var(--ek-text-muted)] hover:text-[var(--ek-text)] hover:bg-[var(--ek-surface)] transition-colors duration-150"
+                onClick=${handleCancelSend}
+              >Cancel</button>
+              <button
+                type="button"
+                class="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--ek-primary)] text-white hover:brightness-90 active:brightness-85 transition-all duration-150"
+                onClick=${handleConfirmSend}
+              >Send</button>
+            </div>
+          </div>
+        </div>
+      `}
 
       ${/* ── Template Modal (replaces sidebar, D-16) ── */''}
       <${TemplateModal} />
