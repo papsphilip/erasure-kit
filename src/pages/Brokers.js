@@ -159,7 +159,7 @@ function handleClearFilters() {
 
 function handleContinue() {
   markStepComplete('brokers');
-  navigateTo('send');
+  navigateTo('track');
 }
 
 function handleToggleExpand(brokerId) {
@@ -408,7 +408,7 @@ export function Brokers() {
             onClick=${canContinue ? handleContinue : undefined}
           >
             ${canContinue
-              ? `Continue to Send \u2192 (${selCount} broker${selCount !== 1 ? 's' : ''})`
+              ? `Continue to Track \u2192 (${selCount} broker${selCount !== 1 ? 's' : ''})`
               : 'Select at least one broker to continue'
             }
           </button>

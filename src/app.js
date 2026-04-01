@@ -17,14 +17,13 @@ import { Footer } from './components/Footer.js';
 // Step pages
 import { Identity } from './pages/Identity.js';
 import { Brokers } from './pages/Brokers.js';
-import { Send } from './pages/Send.js';
 import { Track } from './pages/Track.js';
 
 // Secondary pages
 import { About } from './pages/About.js';
 
 /** Set of page IDs that are wizard steps (show stepper bar) */
-const WIZARD_STEPS = new Set(['identity', 'brokers', 'send', 'track']);
+const WIZARD_STEPS = new Set(['identity', 'brokers', 'track']);
 
 /**
  * Generic placeholder page for routes that will be implemented in future phases.
@@ -56,7 +55,6 @@ function App() {
         ${page === 'welcome' && html`<${WelcomeScreen} />`}
         ${page === 'identity' && html`<${Identity} />`}
         ${page === 'brokers' && html`<${Brokers} />`}
-        ${page === 'send' && html`<${Send} />`}
         ${page === 'track' && html`<${Track} />`}
         ${page === 'about' && html`<${About} />`}
         ${page === 'legal' && html`<${PlaceholderPage} title="Legal Reference" phase="7" />`}
