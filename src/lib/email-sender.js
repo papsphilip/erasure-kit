@@ -2,6 +2,7 @@ import { campaign } from './campaign.js';
 import { getTemplateForBroker } from './template-engine.js';
 import { markBrokerSent, getBrokerStatusValue, STATUS } from './status-tracker.js';
 import { copyToClipboard } from './clipboard.js';
+import { demoMode } from './demo-mode.js';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -24,6 +25,13 @@ export function sendToBroker(broker, options = {}) {
   const identity = options.identity || campaign.value.identity;
   const customTemplates = options.customTemplates || campaign.value.brokers.templates || {};
   const { subject, body } = getTemplateForBroker(identity, broker, customTemplates);
+
+  // Demo mode: simulate send without opening mailto: or clipboard
+  if (demoMode.value) {
+    console.log(`[DEMO] Would send to ${broker.email}: ${subject}`);
+    markBrokerSent(broker.id);
+    return { method: 'demo', success: true };
+  }
 
   const mailtoUrl = buildMailtoUrl(broker.email, subject, body);
 
