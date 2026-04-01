@@ -6,7 +6,6 @@ import { rename } from 'fs/promises';
 import { resolve } from 'path';
 
 const __dirname = import.meta.dirname;
-
 export default defineConfig({
   root: 'src',
   plugins: [
