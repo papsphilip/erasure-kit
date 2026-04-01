@@ -13,6 +13,7 @@ import { Header } from './components/Header.js';
 import { Stepper } from './components/Stepper.js';
 import { WelcomeScreen } from './components/WelcomeScreen.js';
 import { Footer } from './components/Footer.js';
+import { ToastContainer } from './components/Toast.js';
 
 // Step pages
 import { Identity } from './pages/Identity.js';
@@ -61,6 +62,7 @@ function App() {
         ${page === 'escalation' && html`<${PlaceholderPage} title="Escalation" phase="8" />`}
       </main>
       <${Footer} />
+      <${ToastContainer} />
     </div>
   `;
 }

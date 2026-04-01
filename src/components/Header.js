@@ -2,6 +2,7 @@ import { html } from 'htm/preact';
 import { signal } from '@preact/signals';
 import { ThemeToggle } from './ThemeToggle.js';
 import { HamburgerMenu } from './HamburgerMenu.js';
+import { NotificationBell } from './NotificationBell.js';
 import { saveCampaignToFile, loadCampaignFromFile } from '../lib/campaign.js';
 
 /** Error message for failed file loads, auto-clears after 5 seconds */
@@ -59,6 +60,7 @@ export function Header() {
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
           </button>
+          <${NotificationBell} />
           <${ThemeToggle} />
           <${HamburgerMenu} />
         </div>
