@@ -3,6 +3,7 @@ import { signal } from '@preact/signals';
 import { ThemeToggle } from './ThemeToggle.js';
 import { HamburgerMenu } from './HamburgerMenu.js';
 import { saveCampaignToFile, loadCampaignFromFile } from '../lib/campaign.js';
+import { demoMode } from '../lib/demo-mode.js';
 
 /** Error message for failed file loads, auto-clears after 5 seconds */
 const loadError = signal(null);
@@ -39,6 +40,19 @@ export function Header() {
           class="text-xl font-semibold text-[var(--ek-primary)] hover:opacity-80 transition-opacity cursor-pointer bg-transparent border-none outline-none focus-visible:ring-2 focus-visible:ring-sky-500 rounded"
         >ErasureKit</button>
         <div class="flex items-center gap-1">
+          <div class="flex items-center gap-1.5 mr-1">
+            <span class="text-xs ${demoMode.value ? 'text-emerald-400' : 'text-[var(--ek-text-muted)]'} select-none transition-colors duration-150">Demo</span>
+            <button
+              role="switch"
+              aria-checked=${demoMode.value}
+              onClick=${() => { demoMode.value = !demoMode.value; }}
+              class="relative w-9 h-5 rounded-full transition-colors duration-150 cursor-pointer ${demoMode.value ? 'bg-emerald-500' : 'bg-[var(--ek-text-muted)]/30'}"
+              aria-label="Toggle demo mode"
+              title="${demoMode.value ? 'Demo mode ON -- sending is simulated' : 'Demo mode OFF -- normal sending'}"
+            >
+              <span class="absolute top-0.5 left-0 w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform duration-150 ${demoMode.value ? 'translate-x-4' : 'translate-x-0.5'}"></span>
+            </button>
+          </div>
           <button
             onClick=${saveCampaignToFile}
             class="w-10 h-10 rounded-lg flex items-center justify-center text-[var(--ek-text-muted)] hover:text-[var(--ek-text)] hover:bg-[var(--ek-surface)]/50 transition-colors"
