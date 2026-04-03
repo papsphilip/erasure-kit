@@ -51,9 +51,9 @@ Requirements for the relay-based sending system. Each maps to roadmap phases 5-1
 
 ### Relay Infrastructure
 
-- [ ] **RELAY-01**: Cloudflare Worker deployed at api.erasurekit.uk accepts encrypted email payloads and sends them via Resend API from generated @erasurekit.uk addresses
-- [ ] **RELAY-02**: Each campaign gets a unique temporary sender address (e.g. a7k9x@erasurekit.uk) that persists across the campaign session
-- [ ] **RELAY-03**: Worker returns structured JSON responses (success/failure per broker, quota remaining, error details) for frontend consumption
+- [x] **RELAY-01**: Cloudflare Worker deployed at api.erasurekit.uk accepts encrypted email payloads and sends them via Resend API from generated @erasurekit.uk addresses
+- [x] **RELAY-02**: Each campaign gets a unique temporary sender address (e.g. a7k9x@erasurekit.uk) that persists across the campaign session
+- [x] **RELAY-03**: Worker returns structured JSON responses (success/failure per broker, quota remaining, error details) for frontend consumption
 - [ ] **RELAY-04**: "Send All" button dispatches all selected brokers' erasure requests in automated sequence through the relay
 - [ ] **RELAY-05**: Frontend email-sender module calls the Worker relay API instead of opening mailto: links
 
@@ -170,9 +170,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TMPL-04 | Phase 4: Email Templates | Complete |
 | TMPL-05 | Phase 4: Email Templates | Complete |
 | TMPL-06 | Phase 4: Email Templates | Complete |
-| RELAY-01 | Phase 5: Relay Infrastructure and E2E Encryption | Pending |
-| RELAY-02 | Phase 5: Relay Infrastructure and E2E Encryption | Pending |
-| RELAY-03 | Phase 5: Relay Infrastructure and E2E Encryption | Pending |
+| RELAY-01 | Phase 5: Relay Infrastructure and E2E Encryption | Complete |
+| RELAY-02 | Phase 5: Relay Infrastructure and E2E Encryption | Complete |
+| RELAY-03 | Phase 5: Relay Infrastructure and E2E Encryption | Complete |
 | E2EE-01 | Phase 5: Relay Infrastructure and E2E Encryption | Pending |
 | E2EE-02 | Phase 5: Relay Infrastructure and E2E Encryption | Pending |
 | RELAY-04 | Phase 6: Frontend Sending Integration | Pending |
