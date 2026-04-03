@@ -48,7 +48,7 @@ describe('campaign', () => {
   describe('createEmptyCampaign', () => {
     it('returns object with correct schema', () => {
       const empty = createEmptyCampaign();
-      expect(empty.version).toBe(2);
+      expect(empty.version).toBe(3);
       expect(empty.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
       expect(empty.updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
       expect(empty.identity.fullName).toBe('');
@@ -57,9 +57,18 @@ describe('campaign', () => {
       expect(empty.identity.address).toBe('');
       expect(empty.brokers).toEqual({ selected: [], templates: {} });
       expect(empty.tempEmail).toBe(null);
+      expect(empty.encryption).toBe(null);
       expect(empty.messages).toEqual([]);
       expect(empty.statuses).toEqual({});
       expect(empty.settings).toEqual({});
+    });
+
+    it('has version 3', () => {
+      expect(createEmptyCampaign().version).toBe(3);
+    });
+
+    it('has encryption field set to null', () => {
+      expect(createEmptyCampaign().encryption).toBeNull();
     });
   });
 
@@ -182,9 +191,10 @@ describe('campaign', () => {
       };
       const result = migrateCampaign(v1Campaign);
       expect(result).not.toBe(null);
-      expect(result.version).toBe(2);
+      expect(result.version).toBe(3);
       expect(result.brokers.selected).toEqual(['acxiom', 'oracle']);
       expect(result.brokers.templates).toEqual({});
+      expect(result.encryption).toBeNull();
     });
 
     it('preserves existing templates when migrating v2 campaign', () => {
@@ -196,6 +206,19 @@ describe('campaign', () => {
       };
       const result = migrateCampaign(v2Campaign);
       expect(result.brokers.templates.acxiom.body).toBe('Custom text');
+    });
+
+    it('migrates v2 campaign to v3 with encryption field', () => {
+      const v2 = { version: 2, identity: { fullName: 'Test' }, brokers: {} };
+      const migrated = migrateCampaign(v2);
+      expect(migrated.version).toBe(3);
+      expect(migrated.encryption).toBeNull();
+    });
+
+    it('preserves existing encryption field from v3 data', () => {
+      const v3 = { version: 3, encryption: { publicKeyJwk: {}, privateKeyJwk: {} }, identity: {}, brokers: {} };
+      const migrated = migrateCampaign(v3);
+      expect(migrated.encryption).toEqual({ publicKeyJwk: {}, privateKeyJwk: {} });
     });
   });
 

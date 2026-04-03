@@ -3,7 +3,7 @@ import { signal, effect } from '@preact/signals';
 // ── Constants ──────────────────────────────────────────────────────────────────
 
 export const STORAGE_KEY = 'ek-campaign';
-export const CURRENT_VERSION = 2;
+export const CURRENT_VERSION = 3;
 
 // ── Campaign Schema ────────────────────────────────────────────────────────────
 
@@ -25,6 +25,7 @@ export function createEmptyCampaign() {
     },
     brokers: { selected: [], templates: {} },
     tempEmail: null,
+    encryption: null, // { publicKeyJwk, privateKeyJwk } set when campaign generates keys (D-11)
     messages: [],
     statuses: {},
     settings: {},
