@@ -1,47 +1,55 @@
 ---
 scope: tools/erasure-kit
 status: paused
-phase: "Phase 5 context complete — 60 decisions, ready for plan"
+phase: "v2.0 roadmap created -- Phase 5 ready to plan"
 gsd_command: "gsd:plan-phase 5"
-last_updated: "2026-03-31"
+last_updated: "2026-04-03"
 ---
 
-# Continue Here — ErasureKit
+# Continue Here -- ErasureKit
 
 ## Resume Instructions
 
-Phase 5 discuss-phase is **complete**. 60 decisions captured across 9 areas including a major architecture pivot: automated temp-email sending (no mailto:), Brokers+Send page merge (3-step stepper), sidebar replaced with modal.
+v2.0 roadmap is **complete**. 6 new phases (5-10) mapped to 27 requirements covering the relay-based email architecture. Old phases 5-8 replaced.
 
-**Next step:** `/gsd:plan-phase 5`
+**Next step:** `/gsd:plan-phase 5` -- Relay Infrastructure and E2E Encryption
 
-Context file: `.planning/phases/05-sending-and-status-tracking/05-CONTEXT.md`
+Phase 5 deliverables: Cloudflare Worker deployment, Resend API integration, temp @erasurekit.uk address generation, Web Crypto E2E encryption.
 
-## What's Built
+## What's Built (v1.0 + Phase 5 partial)
 
-- Preact + HTM app shell with 4-step wizard stepper (Identity, Brokers, Send, Track)
+- Preact + HTM app shell with 3-step wizard stepper (Identity, Brokers, Track)
 - Two-mode architecture: zero-build dev (open index.html) + Vite single-file build
 - Dark/light theme toggle with privacy blue-gray palette
-- Welcome screen with Resume Campaign / Start New / Load from file for returning users
-- Hamburger menu with Home, Legal Reference, Escalation, About
-- Header title clickable as Home button, Home link in footer
-- Sticky header, stepper, and broker search toolbar
-- Production build: `dist/Erasure-Kit/` folder (erasure-kit.html + brokers.json + README.md)
-- Signal-based routing, theme, and campaign state management
 - Identity form: name, multi-email list, collapsible phone/address, inline validation
-- Campaign persistence: Save/Load buttons in header, localStorage auto-save, browser-fs-access file save/load
+- Campaign persistence: Save/Load buttons, localStorage auto-save, browser-fs-access file save/load
 - 169 brokers in brokers.json covering EU/EEA, UK, US, Other regions
 - Broker table with search, filter, sort, select/deselect, expandable rows
-- Template engine: 3 region-specific generators (GDPR, UK-GDPR, CCPA) with full legal citations
-- Campaign schema v2 with per-broker template storage
-- Template UI: expandable drawer at top of Brokers page, right sidebar for per-broker preview/edit
-- Clipboard copy with "Copied!" fade confirmation, reset-to-default
-- 63 unit tests passing (Vitest + jsdom)
+- Template engine: 3 region-specific generators (GDPR, UK-GDPR, CCPA)
+- Template modal with navigation, edit/copy/reset
+- Status tracking data model with per-broker lifecycle and deadline calculation
+- Email sender module (currently mailto: -- will be refactored to relay in Phase 6)
+- Notification system (signal-based CRUD, toasts, bell dropdown)
+- Track page campaign dashboard with progress bar, stat cards, filter/sort
+- Demo mode toggle
+- 83 unit tests passing
+
+## v2.0 Phase Map
+
+| Phase | What It Delivers | Key Requirements |
+|-------|-----------------|------------------|
+| 5 | Worker relay + E2E encryption | RELAY-01..03, E2EE-01..02 |
+| 6 | Frontend "Send All" via relay | RELAY-04..05, STAT-01..05 |
+| 7 | Reply monitoring + classification | RPLY-01..04 |
+| 8 | Quota batching + session resume | BATCH-01..03 |
+| 9 | Contributor domain scaling | SCALE-01..04 |
+| 10 | Legal reference + escalation + privacy | LEGL-01..04, ESCL-01..03, PRVCY-01 |
 
 ## Context
 
-- Free, open-source GDPR Article 17 erasure automation tool
-- Portable web app (single HTML file, Preact + HTM + Vite)
-- 8 phases, 46 requirements — Phases 1-4 done, 4 remaining
-- GitHub repo: papsphilip/erasure-kit (public)
-- Key finding: mail.tm is receive-only — sending via mailto: links
-- Separate brokers.json compiled from open-source GitHub broker lists
+- Domain: erasurekit.uk (Cloudflare Registrar)
+- Sending: Resend API (eu-west-1, free tier: 100/day, 3,000/month)
+- Receiving: Cloudflare Email Routing (free, unlimited)
+- Worker: Cloudflare Workers (free tier: 100K requests/day)
+- Storage: Cloudflare KV (free tier: 100K reads/day, 1K writes/day)
+- GitHub: papsphilip/erasure-kit (public)

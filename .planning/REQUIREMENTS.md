@@ -3,9 +3,29 @@
 **Defined:** 2026-03-28
 **Core Value:** One-click automated data erasure across all known brokers without exposing the user's real email address.
 
-## v1 Requirements
+## v1.0 Requirements (Shipped)
 
-Requirements for initial release. Each maps to roadmap phases.
+Requirements delivered in v1.0. All complete.
+
+### Distribution
+
+- [x] **DIST-01**: App builds to a single portable HTML file via Vite + vite-plugin-singlefile
+- [x] **DIST-02**: App works in development mode with zero build step (CDN-loaded modules, open index.html directly)
+- [x] **DIST-03**: `brokers.json` is a standalone file that can be updated independently of the app
+
+### Identity Input
+
+- [x] **IDEN-01**: User enters their full name (required for GDPR requests)
+- [x] **IDEN-02**: User enters one or more email addresses they want erased from broker records
+- [x] **IDEN-03**: User can optionally provide phone number and postal address for more thorough data matching
+- [x] **IDEN-04**: Identity data is stored only locally -- never transmitted to any server other than the email send
+
+### Persistence
+
+- [x] **PERS-01**: User can save full campaign state (identity, broker statuses, temp email credentials, messages, deadlines) to a local JSON file via File System API
+- [x] **PERS-02**: User can load a previously saved campaign file to resume progress
+- [x] **PERS-03**: App falls back to download/upload JSON for browsers without File System API (Firefox, Safari)
+- [x] **PERS-04**: App auto-saves to localStorage as a secondary cache to prevent data loss between explicit saves
 
 ### Broker Database
 
@@ -25,34 +45,54 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **TMPL-05**: User can preview the generated email text before sending
 - [x] **TMPL-06**: User can copy email text to clipboard as fallback when mailto: is impractical
 
-### Sending
+## v2.0 Requirements (Active -- Relay-Based Email Architecture)
 
-- [ ] **SEND-01**: App sends erasure requests via `mailto:` links that open the user's default email client with pre-filled subject, recipient, and body
-- [ ] **SEND-02**: User can batch-send to all selected brokers via sequential mailto: link activation
-- [ ] **SEND-03**: After each send, user confirms the email was sent and broker status updates to "sent"
-- [ ] **SEND-04**: App handles mailto: URL length limits — if template exceeds ~2000 chars, automatically falls back to clipboard copy with instructions
+Requirements for the relay-based sending system. Each maps to roadmap phases 5-10.
 
-### Temp Email Monitoring
+### Relay Infrastructure
 
-- [ ] **TEMP-01**: App creates a temporary email inbox via mail.tm API for monitoring broker responses
-- [ ] **TEMP-02**: User can include the temp email address in their erasure request as a "respond to" contact address
-- [ ] **TEMP-03**: App polls the temp inbox for new messages and displays them in-app
-- [ ] **TEMP-04**: App caches all fetched messages locally (mail.tm has 7-day server retention)
-- [ ] **TEMP-05**: App classifies broker responses using keyword heuristics: confirmed deletion, rejection, request for more info, auto-reply, unclassified
-- [ ] **TEMP-06**: User can delete the temp email account when all brokers have responded or campaign is complete
-- [ ] **TEMP-07**: App shows mail.tm service health status and gracefully handles API downtime
+- [ ] **RELAY-01**: Cloudflare Worker deployed at api.erasurekit.uk accepts encrypted email payloads and sends them via Resend API from generated @erasurekit.uk addresses
+- [ ] **RELAY-02**: Each campaign gets a unique temporary sender address (e.g. a7k9x@erasurekit.uk) that persists across the campaign session
+- [ ] **RELAY-03**: Worker returns structured JSON responses (success/failure per broker, quota remaining, error details) for frontend consumption
+- [ ] **RELAY-04**: "Send All" button dispatches all selected brokers' erasure requests in automated sequence through the relay
+- [ ] **RELAY-05**: Frontend email-sender module calls the Worker relay API instead of opening mailto: links
+
+### End-to-End Encryption
+
+- [ ] **E2EE-01**: User's browser generates a Web Crypto API key pair; only the browser holds the private decryption key
+- [ ] **E2EE-02**: All email content (template body, identity data, broker replies) is encrypted before leaving the browser -- the Worker and domain owner cannot decrypt it
+
+### Reply Monitoring
+
+- [ ] **RPLY-01**: Cloudflare Email Routing delivers broker reply emails to the Worker, which stores encrypted reply content in Cloudflare KV
+- [ ] **RPLY-02**: Frontend polls or checks for new replies and displays them in-app with broker name, date, and classified response type
+- [ ] **RPLY-03**: Broker responses are automatically classified as: confirmed deletion, rejection, request for more info, auto-reply, or unclassified
+- [ ] **RPLY-04**: Broker campaign status updates automatically based on response classification (confirmed/rejected/needs-info)
+
+### Batching and Scheduling
+
+- [ ] **BATCH-01**: When selected brokers exceed daily quota (100/day free tier), app shows a calendar UI with daily batches and estimated send dates
+- [ ] **BATCH-02**: Queued emails automatically resume sending when the user reopens the app (campaign resume across sessions)
+- [ ] **BATCH-03**: App displays remaining daily quota, next batch time, and allows manual batch priority adjustment
+
+### Contributor Scaling
+
+- [ ] **SCALE-01**: Worker maintains a relay registry of available domains and load-balances sends across them to maximize throughput
+- [ ] **SCALE-02**: Contributor page explains the $2/year domain donation process with step-by-step DNS and Resend setup instructions
+- [ ] **SCALE-03**: New domains added to the registry are automatically included in load balancing rotation
+- [ ] **SCALE-04**: About page displays current relay network capacity (total domains, monthly quota, usage percentage)
 
 ### Status Tracking
 
-- [ ] **STAT-01**: Each broker has a tracked status: not selected → selected → sent → awaiting response → confirmed / rejected / escalated / overdue
+- [ ] **STAT-01**: Each broker has a tracked status: not selected -> selected -> awaiting response -> confirmed / rejected / escalated / overdue
 - [ ] **STAT-02**: App calculates "one calendar month" deadline from send date using proper date arithmetic (not naive +30 days)
 - [ ] **STAT-03**: App flags brokers as overdue when they exceed the calendar-month deadline
-- [x] **STAT-04**: Dashboard shows aggregate stats: total brokers, selected, sent, awaiting, confirmed, rejected, overdue
-- [x] **STAT-05**: Dashboard shows overall campaign progress as a percentage
+- [x] **STAT-04**: Dashboard shows aggregate stats: total brokers, selected, sent, awaiting, confirmed, rejected, overdue *(infrastructure built in v1.0 Phase 5)*
+- [x] **STAT-05**: Dashboard shows overall campaign progress as a percentage *(infrastructure built in v1.0 Phase 5)*
 
 ### Escalation
 
-- [ ] **ESCL-01**: App generates follow-up warning emails for overdue brokers citing original request date and elapsed time
+- [ ] **ESCL-01**: App generates follow-up warning emails for overdue brokers citing original request date and elapsed time, sent through the relay
 - [ ] **ESCL-02**: App generates DPA complaint letter templates pre-filled with broker name, original request date, and relevant national DPA contact
 - [ ] **ESCL-03**: User is notified when any broker becomes overdue with a clear "Escalate" action
 
@@ -63,34 +103,13 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **LEGL-03**: App includes a DPA directory with all 30+ EU/EEA Data Protection Authorities and UK ICO, including name, website, and complaint form URL
 - [ ] **LEGL-04**: App includes escalation templates: follow-up warning, formal DPA complaint letter, identity verification pushback response
 
-### Persistence
+### Privacy Transparency
 
-- [x] **PERS-01**: User can save full campaign state (identity, broker statuses, temp email credentials, messages, deadlines) to a local JSON file via File System API
-- [x] **PERS-02**: User can load a previously saved campaign file to resume progress
-- [x] **PERS-03**: App falls back to download/upload JSON for browsers without File System API (Firefox, Safari)
-- [x] **PERS-04**: App auto-saves to localStorage as a secondary cache to prevent data loss between explicit saves
+- [ ] **PRVCY-01**: About page explains the full relay architecture, E2E encryption model, temp address lifecycle, and what data the domain owner can and cannot access
 
-### Identity Input
+## Deferred (Future)
 
-- [x] **IDEN-01**: User enters their full name (required for GDPR requests)
-- [x] **IDEN-02**: User enters one or more email addresses they want erased from broker records
-- [x] **IDEN-03**: User can optionally provide phone number and postal address for more thorough data matching
-- [x] **IDEN-04**: Identity data is stored only locally — never transmitted to any server other than the email send
-
-### Distribution
-
-- [x] **DIST-01**: App builds to a single portable HTML file via Vite + vite-plugin-singlefile
-- [x] **DIST-02**: App works in development mode with zero build step (CDN-loaded modules, open index.html directly)
-- [x] **DIST-03**: `brokers.json` is a standalone file that can be updated independently of the app
-
-## v2 Requirements
-
-Deferred to future release. Tracked but not in current roadmap.
-
-### Enhanced Sending
-
-- **ESND-01**: Optional EmailJS integration for true automated bulk sending without manual mailto: interaction (200/month free tier)
-- **ESND-02**: Broker-specific sending preferences (some brokers require web form, flagged as "manual action required")
+Tracked but not in current roadmap.
 
 ### Community
 
@@ -103,11 +122,6 @@ Deferred to future release. Tracked but not in current roadmap.
 - **I18N-01**: i18n framework for community-contributed translations
 - **I18N-02**: Auto-detect browser language and serve matching translation
 
-### Enhanced Monitoring
-
-- **EMON-01**: mail.tm SSE/Mercure real-time push instead of polling
-- **EMON-02**: Multiple temp email provider support (mail.gw, guerrillamail as fallbacks)
-
 ## Out of Scope
 
 Explicitly excluded. Documented to prevent scope creep.
@@ -118,13 +132,14 @@ Explicitly excluded. Documented to prevent scope creep.
 | Cloud storage / syncing | Creates server dependency, breach target. Contradicts "portable" design. |
 | Hosted SaaS deployment | Distribution is portable file, not a hosted service. |
 | Automated DPA complaint filing | Legal processes vary by country. Auto-filing could create legal liability. |
-| Sending from user's real email as default | Core value is protecting real email. Temp email is the point. |
+| Sending from user's real email | Core value is protecting real email. Temp relay address is the point. |
 | Browser extension | Adds distribution complexity, store review processes. |
 | Dark web monitoring | Feature creep into security suite territory. |
 | Recurring removal cycles | Requires persistent infrastructure (server, scheduler). Users re-run manually. |
 | People-search site scanning | Requires web scraping, CAPTCHA solving, constant maintenance. |
 | Native desktop app | Portable web app covers the use case with zero install friction. |
-| Multi-language (v1) | Ship fast. i18n-ready patterns for community contributions later. |
+| Multi-language (v2) | Ship relay architecture first. i18n-ready patterns for community contributions later. |
+| mailto: links | Superseded by relay-based sending in v2.0 |
 
 ## Traceability
 
@@ -155,35 +170,44 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TMPL-04 | Phase 4: Email Templates | Complete |
 | TMPL-05 | Phase 4: Email Templates | Complete |
 | TMPL-06 | Phase 4: Email Templates | Complete |
-| SEND-01 | Phase 5: Sending and Status Tracking | Pending |
-| SEND-02 | Phase 5: Sending and Status Tracking | Pending |
-| SEND-03 | Phase 5: Sending and Status Tracking | Pending |
-| SEND-04 | Phase 5: Sending and Status Tracking | Pending |
-| STAT-01 | Phase 5: Sending and Status Tracking | Pending |
-| STAT-02 | Phase 5: Sending and Status Tracking | Pending |
-| STAT-03 | Phase 5: Sending and Status Tracking | Pending |
-| STAT-04 | Phase 5: Sending and Status Tracking | Complete |
-| STAT-05 | Phase 5: Sending and Status Tracking | Complete |
-| TEMP-01 | Phase 6: Temp Email Monitoring | Pending |
-| TEMP-02 | Phase 6: Temp Email Monitoring | Pending |
-| TEMP-03 | Phase 6: Temp Email Monitoring | Pending |
-| TEMP-04 | Phase 6: Temp Email Monitoring | Pending |
-| TEMP-05 | Phase 6: Temp Email Monitoring | Pending |
-| TEMP-06 | Phase 6: Temp Email Monitoring | Pending |
-| TEMP-07 | Phase 6: Temp Email Monitoring | Pending |
-| LEGL-01 | Phase 7: Legal Reference | Pending |
-| LEGL-02 | Phase 7: Legal Reference | Pending |
-| LEGL-03 | Phase 7: Legal Reference | Pending |
-| LEGL-04 | Phase 7: Legal Reference | Pending |
-| ESCL-01 | Phase 8: Escalation | Pending |
-| ESCL-02 | Phase 8: Escalation | Pending |
-| ESCL-03 | Phase 8: Escalation | Pending |
+| RELAY-01 | Phase 5: Relay Infrastructure and E2E Encryption | Pending |
+| RELAY-02 | Phase 5: Relay Infrastructure and E2E Encryption | Pending |
+| RELAY-03 | Phase 5: Relay Infrastructure and E2E Encryption | Pending |
+| E2EE-01 | Phase 5: Relay Infrastructure and E2E Encryption | Pending |
+| E2EE-02 | Phase 5: Relay Infrastructure and E2E Encryption | Pending |
+| RELAY-04 | Phase 6: Frontend Sending Integration | Pending |
+| RELAY-05 | Phase 6: Frontend Sending Integration | Pending |
+| STAT-01 | Phase 6: Frontend Sending Integration | Pending |
+| STAT-02 | Phase 6: Frontend Sending Integration | Pending |
+| STAT-03 | Phase 6: Frontend Sending Integration | Pending |
+| STAT-04 | Phase 6: Frontend Sending Integration | Complete |
+| STAT-05 | Phase 6: Frontend Sending Integration | Complete |
+| RPLY-01 | Phase 7: Reply Monitoring and Response Classification | Pending |
+| RPLY-02 | Phase 7: Reply Monitoring and Response Classification | Pending |
+| RPLY-03 | Phase 7: Reply Monitoring and Response Classification | Pending |
+| RPLY-04 | Phase 7: Reply Monitoring and Response Classification | Pending |
+| BATCH-01 | Phase 8: Quota-Aware Batching and Campaign Resume | Pending |
+| BATCH-02 | Phase 8: Quota-Aware Batching and Campaign Resume | Pending |
+| BATCH-03 | Phase 8: Quota-Aware Batching and Campaign Resume | Pending |
+| SCALE-01 | Phase 9: Contributor Scaling and Relay Registry | Pending |
+| SCALE-02 | Phase 9: Contributor Scaling and Relay Registry | Pending |
+| SCALE-03 | Phase 9: Contributor Scaling and Relay Registry | Pending |
+| SCALE-04 | Phase 9: Contributor Scaling and Relay Registry | Pending |
+| LEGL-01 | Phase 10: Legal Reference, Escalation, and Privacy Transparency | Pending |
+| LEGL-02 | Phase 10: Legal Reference, Escalation, and Privacy Transparency | Pending |
+| LEGL-03 | Phase 10: Legal Reference, Escalation, and Privacy Transparency | Pending |
+| LEGL-04 | Phase 10: Legal Reference, Escalation, and Privacy Transparency | Pending |
+| ESCL-01 | Phase 10: Legal Reference, Escalation, and Privacy Transparency | Pending |
+| ESCL-02 | Phase 10: Legal Reference, Escalation, and Privacy Transparency | Pending |
+| ESCL-03 | Phase 10: Legal Reference, Escalation, and Privacy Transparency | Pending |
+| PRVCY-01 | Phase 10: Legal Reference, Escalation, and Privacy Transparency | Pending |
 
 **Coverage:**
-- v1 requirements: 46 total
-- Mapped to phases: 46
+- v1.0 requirements: 23 total (all complete)
+- v2.0 requirements: 27 total (0 complete, 2 partially built)
+- Total mapped: 50/50
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-28 after roadmap creation (8 phases)*
+*Last updated: 2026-04-03 after v2.0 roadmap creation (10 phases)*

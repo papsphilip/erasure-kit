@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: relay-based-email-architecture
-status: defining_requirements
+status: ready_to_plan
 stopped_at: null
-last_updated: "2026-04-01T15:00:00.000Z"
-last_activity: 2026-04-01 -- Milestone v2.0 started
+last_updated: "2026-04-03T00:00:00.000Z"
+last_activity: 2026-04-03 -- v2.0 roadmap created (6 new phases)
 progress:
-  total_phases: 0
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 10
+  completed_phases: 4
+  total_plans: 8
+  completed_plans: 8
+  percent: 40
 ---
 
 # Project State
@@ -21,43 +21,38 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-01)
 
 **Core value:** One-click automated data erasure across all known brokers without exposing the user's real email address.
-**Current focus:** Defining requirements for v2.0 relay-based email architecture
+**Current focus:** Phase 5 -- Relay Infrastructure and E2E Encryption
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-04-01 — Milestone v2.0 started
-Last activity: 2026-04-01 -- Phase 05 execution started
+Phase: 5 of 10 (Relay Infrastructure and E2E Encryption)
+Plan: Not yet planned
+Status: Ready to plan
+Last activity: 2026-04-03 -- v2.0 roadmap created with 6 new phases (5-10)
 
-Progress: [██░░░░░░░░] 25%
+Progress: [████░░░░░░] 40% (4 of 10 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
-
-- Total plans completed: 0
-- Average duration: —
-- Total execution time: 0 hours
+- Total plans completed: 8 (across v1.0 phases 1-4)
+- Average duration: ~5 min
+- Total execution time: ~40 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| Phase 01 | 2 | ~10min | 5min |
+| Phase 02 | 3 | ~11min | 3.7min |
+| Phase 03 | 1 | 9min | 9min |
+| Phase 04 | 2 | ~6min | 3min |
 
 **Recent Trend:**
-
-- Last 5 plans: —
-- Trend: —
+- Last 5 plans: 5min, 3min, 5min, 9min, 3min
+- Trend: Stable
 
 *Updated after each plan completion*
-| Phase 01 P02 | 5min | 2 tasks | 14 files |
-| Phase 02 P02 | 3min | 1 tasks | 1 files |
-| Phase 02 P03 | 5min | 2 tasks | 4 files |
-| Phase 03 P01 | 9min | 3 tasks | 6 files |
-| Phase 04 P02 | 3min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -66,22 +61,11 @@ Progress: [██░░░░░░░░] 25%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [Roadmap]: 8 phases derived from 10 requirement categories with fine granularity
-- [Research]: mail.tm is receive-only — sending via mailto: links (user's email client)
-- [Research]: Preact + HTM stack (not React) for zero-build-step dev mode
-- [Research]: browser-fs-access for cross-browser file persistence
-- [Phase 01]: Added htm as npm dependency for Vite build mode (was CDN-only in dev mode)
-- [Phase 02]: Local UI state (errors, showOptional) as module-level signals separate from campaign data
-- [Phase 02]: Inline SVG icons for lock/chevron/X -- no external icon library for Preact app
-- [Phase 02]: Header wraps in div fragment for error toast placement outside header element
-- [Phase 02]: WelcomeScreen uses campaign signal instead of raw localStorage for returning user detection
-- [Phase 03]: 169 brokers compiled covering all 4 regions and 8 categories
-- [Phase 03]: Broker selections as ID array in campaign.brokers.selected (not full objects)
-- [Phase 03]: CSS-only tooltips for temp-email-blocked indicator
-- [Phase 03]: @vite-ignore fixes dynamic import fallback in brokers-loader.js
-- [Phase 03]: Computed signals for derived data (filteredBrokers, selectedIds, allVisibleSelected)
-- [Phase 04]: Sidebar uses fixed positioning with full-width mobile overlay and 420px/480px desktop panel
-- [Phase 04]: Preview eye icon button only shown for selected brokers; unselected brokers have no templates
+- [v2.0 Roadmap]: Replaced phases 5-8 with 6 new phases (5-10) for relay architecture
+- [v2.0 Roadmap]: E2E encryption baked into Phase 5 (not bolted on later)
+- [v2.0 Roadmap]: Old SEND-01..04 and TEMP-01..07 requirements retired; replaced by RELAY/E2EE/RPLY/BATCH/SCALE IDs
+- [v2.0 Roadmap]: v1.0 Phase 5 built infra (status-tracker, email-sender, notifications, Track dashboard) carries forward
+- [v2.0 Roadmap]: Phase 6 refactors email-sender.js to call Worker relay instead of mailto:
 
 ### Pending Todos
 
@@ -89,8 +73,8 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Research gap]: mail.tm CORS from file:// origin not empirically tested — must validate in Phase 1
-- [Research gap]: mailto: URL length limits (~2000 chars) — needs testing in Phase 5
+- [Infra]: Cloudflare Worker + Resend + Email Routing + KV all need account setup and DNS configuration before Phase 5 can execute
+- [Infra]: Resend free tier = 100 emails/day, 3,000/month -- Phase 8 batching is critical for real campaigns
 
 ### Quick Tasks Completed
 
@@ -100,6 +84,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-31T15:58:01.698Z
-Stopped at: Phase 5 context gathered — 60 decisions across 9 areas
-Resume file: .planning/phases/05-sending-and-status-tracking/05-CONTEXT.md
+Last session: 2026-04-03
+Stopped at: v2.0 roadmap created -- 6 new phases mapped to 27 requirements
+Resume file: continue_here.md

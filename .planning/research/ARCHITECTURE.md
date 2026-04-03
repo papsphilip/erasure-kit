@@ -1,798 +1,1161 @@
 # Architecture Patterns
 
-**Domain:** Browser-only GDPR erasure automation tool (portable web app)
-**Researched:** 2026-03-28
+**Domain:** Relay-based email sending for GDPR erasure automation (v2.0 milestone)
+**Researched:** 2026-04-01
+**Supersedes:** v1.0 architecture (mail.tm + mailto: strategy, now replaced by relay)
 
-## Critical Discovery: The Send/Receive Split
+## Executive Summary
 
-The single most important architectural finding is that **no free temp email API supports both sending AND receiving emails from the browser**. This fundamentally shapes the entire architecture.
+v2.0 replaces the mailto:-based sending (which exposed the user's real email) and the mail.tm-based inbox monitoring (which relied on a third-party temp email service) with a **unified Cloudflare relay architecture**. A single Cloudflare Worker handles both outbound sending (via Resend API) and inbound reply processing (via Cloudflare Email Routing). Every user gets a random temporary address like `a7k9x@erasurekit.uk`. All emails are end-to-end encrypted so the domain owner cannot read user emails.
 
-| Service | Send | Receive | CORS | Free | Notes |
-|---------|------|---------|------|------|-------|
-| **mail.tm** | NO | YES | YES (`*`) | YES | Verified: `access-control-allow-origin: *`. Receive-only. |
-| **Guerrilla Mail** | NO | YES | YES (`*`) | YES | Verified: `access-control-allow-origin: *`. Receive-only. No send function in API. |
-| **MailSlurp** | YES | YES | Unknown | Partial | Requires API key (exposed in client). Free tier blocks sends to Gmail/Yahoo. |
-| **EmailJS** | YES | NO | YES | 200/mo | Client-side email sending service. No inbox, no receiving. |
-| **Resend/Mailgun/etc.** | YES | NO | NO | Various | Block CORS by design. Require server-side proxy. |
+The frontend remains a portable Preact + HTM single-file app. The Worker is the only server-side component. Cloudflare KV provides the storage layer between the Worker (which writes) and the frontend (which polls). The Web Crypto API (available in both browsers and Cloudflare Workers) provides the cryptographic primitives for E2E encryption.
 
-**Confidence: HIGH** -- mail.tm and Guerrilla Mail CORS headers were verified via direct `curl` preflight requests to their APIs.
+**Overall confidence: HIGH** -- All components are well-documented, production-stable Cloudflare services. The Resend API and Cloudflare Email Routing are both verified to work with Workers. The Web Crypto API is a W3C standard available in all target environments.
 
-### Architectural Consequence
+---
 
-The app MUST use a **dual-service architecture**: one service for receiving (monitoring inbox) and a separate mechanism for sending. The reference prototype in `helpers/erasure-kit.md` uses `mailto:` links for sending, which is the simplest zero-dependency approach. The upgraded architecture uses mail.tm for inbox monitoring and provides multiple send strategies.
+## v1.0 to v2.0 Architecture Delta
+
+### What Changes
+
+| Component | v1.0 | v2.0 | Why |
+|-----------|------|------|-----|
+| **Email sending** | mailto: links (user's email client) | Cloudflare Worker + Resend API | True automation, user's real email never exposed |
+| **Reply monitoring** | mail.tm temp inbox (browser polls) | Cloudflare Email Routing catch-all | No dependency on third-party temp email service |
+| **Temp email** | mail.tm API creates account | Worker assigns random `@erasurekit.uk` alias | One domain, infinite aliases via catch-all |
+| **State sync** | 100% client-side (localStorage + file) | Client-side + Cloudflare KV for relay state | Worker needs persistent state for async replies |
+| **Encryption** | Not needed (no server) | E2E encryption (user holds private key) | Domain owner must not be able to read emails |
+| **Infrastructure cost** | $0 (free APIs) | ~$5.30/year (domain only) | All Cloudflare/Resend services on free tiers |
+
+### What Stays the Same
+
+| Component | Unchanged |
+|-----------|-----------|
+| **Frontend framework** | Preact + HTM + Signals |
+| **Build system** | Vite + vite-plugin-singlefile |
+| **Local persistence** | localStorage auto-save + browser-fs-access file save/load |
+| **Campaign state signal** | `campaign.js` signal-based state management |
+| **Broker database** | Separate `brokers.json`, community-editable |
+| **Template engine** | GDPR/UK-GDPR/CCPA template generation |
+| **Status tracker** | Per-broker lifecycle with 30-day deadline |
 
 ---
 
 ## Recommended Architecture
 
-### High-Level Component Diagram
+### System Component Diagram
 
 ```
-+------------------------------------------------------------------+
-|                        ErasureKit (Browser)                       |
-|                                                                   |
-|  +------------------+  +------------------+  +-----------------+ |
-|  |   Identity Form  |  |  Broker Manager  |  |    Dashboard    | |
-|  |  (name, emails)  |  | (list, filter,   |  | (stats, status, | |
-|  |                  |  |  select, search)  |  |  deadlines)     | |
-|  +--------+---------+  +--------+---------+  +--------+--------+ |
-|           |                      |                     |          |
-|  +--------v----------------------v---------------------v--------+ |
-|  |                      Core Engine                              | |
-|  |                                                               | |
-|  |  +------------------+  +-------------------+  +-------------+ | |
-|  |  |  Email Composer  |  |  Inbox Monitor    |  |  Deadline   | | |
-|  |  |  (template gen,  |  |  (mail.tm client, |  |  Tracker    | | |
-|  |  |   send dispatch) |  |   SSE/polling)    |  |  (30-day)   | | |
-|  |  +--------+---------+  +--------+----------+  +------+------+ | |
-|  |           |                      |                    |        | |
-|  |  +--------v----------------------v--------------------v------+ | |
-|  |  |                    State Manager                          | | |
-|  |  |  (campaign state, broker statuses, user identity,         | | |
-|  |  |   temp email credentials, response classifications)       | | |
-|  |  +---------------------------+-------------------------------+ | |
-|  +--------------------------------------------------------------|+ |
-|                              |                                    |
-|  +---------------------------v----------------------------------+ |
-|  |                  Persistence Layer                            | |
-|  |  browser-fs-access (File System API + <a download> fallback) | |
-|  +--------------------------------------------------------------+ |
-|                                                                   |
-+---------------------------+---------------------------------------+
-                            |
-            External APIs   |
-                            |
-        +-------------------v-------------------+
-        |                                       |
-   +----v----+    +----------+    +----------+  |
-   | mail.tm |    | mailto:  |    | EmailJS  |  |
-   | API     |    | protocol |    | (opt.)   |  |
-   | (recv)  |    | (send)   |    | (send)   |  |
-   +---------+    +----------+    +----------+  |
-        |                                       |
-        +---------------------------------------+
++-----------------------------------------------------------------------+
+|                     ErasureKit Frontend (Browser)                      |
+|                                                                        |
+|  +------------------+ +------------------+ +------------------------+ |
+|  |  Identity Form   | | Broker Manager   | |  Campaign Dashboard    | |
+|  |  (existing)      | | (existing)       | |  (existing + new       | |
+|  |                  | |                  | |   reply monitoring)    | |
+|  +--------+---------+ +--------+---------+ +----------+-------------+ |
+|           |                    |                       |               |
+|  +--------v--------------------v-----------------------v-------------+ |
+|  |                        Core Engine                                | |
+|  |                                                                    | |
+|  | +----------------+ +-----------------+ +------------------------+ | |
+|  | | Template Engine | | Relay Client    | | Crypto Module          | | |
+|  | | (existing)     | | (NEW)           | | (NEW)                  | | |
+|  | |                | | - register()    | | - generateKeyPair()    | | |
+|  | |                | | - sendBatch()   | | - encrypt(pubKey,data) | | |
+|  | |                | | - pollReplies() | | - decrypt(privKey,data)| | |
+|  | |                | | - getStatus()   | | - exportKey()/import() | | |
+|  | +--------+-------+ +--------+--------+ +----------+-------------+ | |
+|  |          |                  |                      |               | |
+|  | +--------v------------------v----------------------v-------------+ | |
+|  | |                   Campaign State (Signals)                      | | |
+|  | |  campaign.js (existing) + relay state extension                 | | |
+|  | +----------------------------+------------------------------------+ | |
+|  +-------------------------------------------------------------------+ |
+|                                  |                                      |
+|              [HTTPS fetch()]     |                                      |
++----------------------------------v--------------------------------------+
+                                   |
+                    +--------------v--------------+
+                    |    Cloudflare Worker         |
+                    |    (relay.erasurekit.uk)      |
+                    |                              |
+                    |  POST /register              |
+                    |  POST /send                  |
+                    |  GET  /replies/:alias        |
+                    |  GET  /status/:alias         |
+                    |  GET  /health                |
+                    |  email() handler (inbound)   |
+                    +---------+--------+-----------+
+                              |        |
+                    +---------v-+    +-v-----------+
+                    | Resend API |    | Cloudflare  |
+                    | (send via  |    | Email       |
+                    | HTTP)      |    | Routing     |
+                    |            |    | (receive    |
+                    | from:      |    |  catch-all  |
+                    | alias@     |    |  -> Worker)  |
+                    | erasurekit |    |              |
+                    | .uk        |    |              |
+                    +------------+    +---------+---+
+                                               |
+                    +---------------------------v---+
+                    |     Cloudflare KV              |
+                    |                                |
+                    |  Namespace: RELAY_STATE         |
+                    |  Keys:                          |
+                    |    alias:{alias}:meta           |
+                    |    alias:{alias}:pubkey         |
+                    |    alias:{alias}:queue          |
+                    |    alias:{alias}:replies        |
+                    |    alias:{alias}:msg:{id}       |
+                    |    relay:registry               |
+                    |    relay:stats                  |
+                    +--------------------------------+
 ```
 
 ### Component Boundaries
 
-| Component | Responsibility | Communicates With | Isolation Level |
-|-----------|---------------|-------------------|-----------------|
-| **Identity Form** | Collects user name, emails, optional phone/address. Never transmitted externally. | State Manager (writes identity) | UI only |
-| **Broker Manager** | Loads brokers.json, filters/searches/selects brokers, displays broker cards | State Manager, Email Composer, brokers.json | UI + data |
-| **Dashboard** | Aggregate stats (sent/pending/overdue/completed), deadline warnings, progress visualization | State Manager (reads) | UI only (read-only) |
-| **Email Composer** | Generates GDPR-compliant email templates, dispatches via mailto: or EmailJS | State Manager (reads identity + broker data), Broker Manager | Logic + UI |
-| **Inbox Monitor** | Creates mail.tm temp account, authenticates, polls/SSE for incoming messages, classifies responses | mail.tm API, State Manager, Response Classifier | Logic (network I/O) |
-| **Deadline Tracker** | Computes 30-day deadlines from send dates, flags overdue brokers, generates escalation templates | State Manager (reads timestamps) | Pure logic |
-| **State Manager** | Central state: campaign lifecycle, broker statuses, credentials, classification results | All components (hub) | State only |
-| **Persistence Layer** | Save/load campaign state to local JSON files via File System Access API with download/upload fallback | State Manager, browser-fs-access | I/O only |
-| **Response Classifier** | Analyzes incoming email text to categorize: confirmation, rejection, needs-more-info, auto-reply/irrelevant | Inbox Monitor (input), State Manager (output) | Pure logic |
+| Component | Responsibility | Location | Communicates With |
+|-----------|---------------|----------|-------------------|
+| **Relay Client** (NEW) | Frontend module that talks to the Worker API. Registers aliases, submits send batches, polls for replies. | `src/lib/relay-client.js` | Worker API (HTTPS), Campaign State, Crypto Module |
+| **Crypto Module** (NEW) | Generates ECDH key pairs, encrypts/decrypts email content, exports/imports keys for persistence. | `src/lib/crypto.js` | Relay Client (provides pubkey on register, decrypts replies) |
+| **Cloudflare Worker** (NEW) | Receives send requests, dispatches via Resend, receives inbound emails via Email Routing, stores encrypted replies in KV. | `worker/` directory | Resend API, Cloudflare KV, Cloudflare Email Routing |
+| **Campaign State** (MODIFIED) | Extended with relay fields: `relayAlias`, `relayUrl`, `keyPair`, `sendQueue`, `replyCache`. | `src/lib/campaign.js` | All frontend components |
+| **Status Tracker** (MODIFIED) | New status values for relay lifecycle: `queued`, `relay_sent`, `relay_failed`. Existing `awaiting` reused for post-send. | `src/lib/status-tracker.js` | Campaign State |
+| **Template Engine** (UNMODIFIED) | Generates email subject + body. No changes needed -- output is consumed by Relay Client instead of mailto: builder. | `src/lib/template-engine.js` | Identity state, Broker data |
 
 ---
 
 ## Data Flow
 
-### Flow 1: Campaign Setup
+### Flow 1: Campaign Registration (User starts sending)
 
 ```
-User enters identity info
-        |
-        v
-Identity Form --> State Manager (stores identity locally)
-        |
-        v
-User loads/edits brokers.json --> Broker Manager parses + displays
-        |
-        v
-User selects target brokers --> State Manager (stores selections)
-        |
-        v
-User clicks "Start Campaign"
-        |
-        v
-Inbox Monitor --> mail.tm API: GET /domains
-                              POST /accounts (create temp email)
-                              POST /token (get JWT)
-        |
-        v
-State Manager stores: temp email address, JWT token, account ID
-        |
-        v
-Dashboard shows: temp email address created, ready to send
+User clicks "Send All" on Brokers page
+    |
+    v
+Crypto Module: generateKeyPair()
+    - Uses Web Crypto API: ECDH P-256
+    - Returns { publicKey, privateKey } as CryptoKeyPair
+    - Exports publicKey as JWK for transmission
+    - Stores privateKey in campaign state (never leaves browser)
+    |
+    v
+Relay Client: POST /register
+    Request: {
+      publicKey: <JWK>,       // user's ECDH public key
+    }
+    Response: {
+      alias: "a7k9x",        // random 5-char alphanumeric
+      email: "a7k9x@erasurekit.uk",
+      expiresAt: "2026-06-01T00:00:00Z",  // 60-day TTL
+      workerPublicKey: <JWK>  // Worker's ECDH public key for this alias
+    }
+    |
+    v
+Crypto Module: deriveSharedKey()
+    - ECDH: user privateKey + worker publicKey => shared AES-256-GCM key
+    - This key encrypts/decrypts all email content for this alias
+    |
+    v
+Campaign State updated:
+    campaign.relay = {
+      alias: "a7k9x",
+      email: "a7k9x@erasurekit.uk",
+      relayUrl: "https://relay.erasurekit.uk",
+      workerPublicKey: <JWK>,
+      expiresAt: "2026-06-01T00:00:00Z",
+    }
+    campaign.keyPair = {
+      publicKey: <JWK>,        // exported for persistence
+      privateKey: <JWK>,       // exported for persistence (stays local)
+    }
 ```
 
-### Flow 2: Sending Erasure Requests
+### Flow 2: Sending Erasure Requests (Batch dispatch)
 
 ```
-For each selected broker:
-        |
-        v
-Email Composer generates template:
-  - User identity (name, emails to erase)
-  - Broker-specific: name, privacy email
-  - Region-aware: GDPR Art.17 (EU/UK) vs CCPA (US)
-        |
-        v
-Send Strategy (user-configurable):
-        |
-        +---> [Primary] mailto: link
-        |     Opens user's email client with pre-filled template
-        |     FROM: temp email address (user copies/pastes into From field)
-        |     TO: broker privacy email
-        |     User clicks send manually
-        |
-        +---> [Alternative] EmailJS (if configured)
-        |     Sends directly from browser
-        |     FROM: temp email address domain
-        |     TO: broker privacy email
-        |     Automated, no user interaction
-        |
-        v
-State Manager records:
-  - Broker status: pending --> sent
-  - Send timestamp (for 30-day deadline calculation)
-  - Send method used
+For each selected broker (batched by daily quota):
+    |
+    v
+Template Engine: getTemplateForBroker(identity, broker, customTemplates)
+    Returns: { subject, body }
+    |
+    v
+Crypto Module: encrypt(sharedKey, { subject, body })
+    - AES-256-GCM encryption
+    - Returns: { ciphertext, iv, tag }  (base64-encoded)
+    |
+    v
+Relay Client: POST /send
+    Request: {
+      alias: "a7k9x",
+      batch: [
+        {
+          brokerId: "acxiom",
+          to: "privacy@acxiom.com",
+          encrypted: { ciphertext, iv, tag },  // encrypted { subject, body }
+        },
+        // ... up to 100 per batch (Resend limit)
+      ]
+    }
+    |
+    v
+Worker receives POST /send:
+    For each item in batch:
+        1. Read alias metadata from KV (verify alias exists, not expired)
+        2. Derive shared AES key: Worker ECDH privateKey + user publicKey
+        3. Decrypt { subject, body } using shared key
+        4. Call Resend API:
+            from: "a7k9x@erasurekit.uk"
+            to: broker email
+            reply_to: "a7k9x@erasurekit.uk"
+            subject: decrypted subject
+            body: decrypted body
+        5. Record send result in KV:
+            alias:{alias}:sent:{brokerId} = { sentAt, resendId, status }
+        6. Re-encrypt result with shared key, store encrypted
+    |
+    v
+Worker responds:
+    Response: {
+      results: [
+        { brokerId: "acxiom", status: "sent", sentAt: "..." },
+        { brokerId: "experian", status: "rate_limited", retryAfter: 3600 },
+      ]
+    }
+    |
+    v
+Campaign State: update broker statuses
+    - "sent" -> markBrokerSent(brokerId) -> status: AWAITING
+    - "rate_limited" -> keep in queue, schedule retry
+    - "failed" -> mark failed, show error to user
 ```
 
-### Flow 3: Inbox Monitoring
+### Flow 3: Receiving Broker Replies (Inbound email processing)
 
 ```
-Inbox Monitor activates after first email sent
-        |
-        v
-Two strategies (configurable):
-
-[Strategy A: SSE/Mercure - preferred]
-  EventSource connects to mail.tm Mercure hub
-  Topic: /accounts/{accountId}
-  Auth: JWT Bearer token
-  Real-time push of new messages
-        |
-        v
-[Strategy B: Polling - fallback]
-  setInterval every 30-60 seconds
-  GET /messages (with Authorization: Bearer JWT)
-  Compare message IDs against known set
-        |
-        v
-New message detected
-        |
-        v
-GET /messages/{id} (fetch full content)
-        |
-        v
-Response Classifier analyzes email body:
-  - Keyword matching: "deleted", "erased", "completed", "removed"
-    --> CONFIRMED
-  - Keywords: "denied", "refused", "cannot comply", "legal obligation"
-    --> REJECTED
-  - Keywords: "verify", "identification", "confirm your identity"
-    --> NEEDS_MORE_INFO
-  - Keywords: "auto-reply", "out of office", "no-reply"
-    --> AUTO_REPLY (ignore)
-  - No match
-    --> UNCLASSIFIED (user reviews manually)
-        |
-        v
-State Manager updates broker status:
-  sent --> responded (with classification)
-        |
-        v
-Dashboard refreshes: shows response, updates stats
+Broker sends reply to a7k9x@erasurekit.uk
+    |
+    v
+Cloudflare Email Routing:
+    - catch-all rule forwards ALL @erasurekit.uk to Email Worker
+    |
+    v
+Worker email() handler:
+    1. Parse alias from "to" address: "a7k9x" from "a7k9x@erasurekit.uk"
+    2. Parse email content with postal-mime:
+        - from (broker email)
+        - subject
+        - text body / HTML body
+    3. Look up alias metadata in KV: alias:a7k9x:meta
+    4. Verify alias exists and not expired
+    5. Look up user's public key: alias:a7k9x:pubkey
+    6. Derive shared AES key: Worker ECDH privateKey + user publicKey
+    7. Encrypt reply content: { from, subject, textBody, htmlBody, receivedAt }
+    8. Store encrypted reply in KV:
+        Key: alias:a7k9x:msg:{messageId}
+        Value: { encrypted: { ciphertext, iv, tag }, from, receivedAt }
+        TTL: 60 days
+    9. Append messageId to reply index:
+        Key: alias:a7k9x:replies
+        Value: [...existingIds, messageId]
+    |
+    v
+(Async -- no immediate notification to user)
 ```
 
-### Flow 4: Deadline Tracking
+### Flow 4: Frontend Polls for Replies
 
 ```
-Deadline Tracker runs on state changes + periodic check
-        |
-        v
-For each broker with status "sent" or "responded":
-  sentDate + 30 days = deadlineDate
-  if (now > deadlineDate && status !== 'completed'):
-    flag as OVERDUE
-        |
-        v
-OVERDUE broker triggers:
-  1. Dashboard warning badge
-  2. Escalation template generator:
-     - Follow-up warning email template
-     - DPA complaint letter template
-     - Link to relevant DPA website
-        |
-        v
-User manually escalates (generates template, user sends via DPA website)
+Frontend polls periodically (every 60 seconds when app is open):
+    |
+    v
+Relay Client: GET /replies/{alias}?since={lastCheckTimestamp}
+    |
+    v
+Worker:
+    1. Read reply index from KV: alias:{alias}:replies
+    2. Filter to replies after "since" timestamp
+    3. Return encrypted reply metadata (not full content)
+    Response: {
+      replies: [
+        { messageId: "msg123", from: "privacy@acxiom.com",
+          receivedAt: "2026-04-15T10:30:00Z" },
+      ]
+    }
+    |
+    v
+Frontend: for each new reply:
+    Relay Client: GET /replies/{alias}/msg/{messageId}
+    Worker returns encrypted message content from KV
+    |
+    v
+Crypto Module: decrypt(sharedKey, encryptedContent)
+    Returns: { from, subject, textBody, htmlBody, receivedAt }
+    |
+    v
+Response Classifier (existing logic, enhanced):
+    - Keyword matching on decrypted text body
+    - Categories: CONFIRMED, REJECTED, NEEDS_MORE_INFO, AUTO_REPLY, UNCLASSIFIED
+    |
+    v
+Campaign State:
+    - Update broker status based on classification
+    - Cache decrypted reply in campaign state (local only)
+    - Update dashboard stats
 ```
 
-### Flow 5: Campaign Completion
+### Flow 5: Quota-Aware Batching and Calendar Schedule
 
 ```
-All brokers reach terminal state (completed/rejected/escalated)
-        |
-        v
-User clicks "Complete Campaign"
-        |
-        v
-Inbox Monitor --> mail.tm API: DELETE /accounts/{id}
-  (Deletes temp email account permanently)
-        |
-        v
-State Manager archives campaign:
-  - Final stats
-  - Completion timestamp
-  - All broker outcomes
-        |
-        v
-Persistence Layer saves final state to file
-```
-
----
-
-## CORS Strategy
-
-### mail.tm: Direct Browser Access (Verified)
-
-**CORS is fully open.** Verified via direct preflight request:
-
-```
-access-control-allow-origin: *
-access-control-allow-methods: GET, OPTIONS, POST, PUT, PATCH, DELETE
-access-control-allow-headers: content-type, authorization, preload, fields
-access-control-max-age: 3600
-```
-
-**Confidence: HIGH** -- Tested directly. All HTTP methods allowed. Authorization header allowed. No proxy needed.
-
-The mail.tm API is built on Symfony/API Platform, which uses the Mercure protocol for SSE push updates. The SSE endpoint should also respect CORS since it shares the same server infrastructure.
-
-### Guerrilla Mail: Direct Browser Access (Verified, But Not Recommended)
-
-```
-access-control-allow-origin: *
-```
-
-CORS is open BUT Guerrilla Mail uses PHP session cookies (PHPSESSID) which creates complications with third-party cookie restrictions in modern browsers. Also no send capability. **Use mail.tm instead.**
-
-### No Proxy Needed
-
-Because mail.tm returns `access-control-allow-origin: *` with all necessary methods and headers, the app can make direct `fetch()` calls from any origin (including `file://` protocol for local HTML files). **No CORS proxy, no serverless function, no backend of any kind is required for inbox operations.**
-
-### EmailJS: Transparent Proxy (For Sending)
-
-EmailJS handles CORS internally -- their SDK makes calls to their servers which relay the email. The API key is exposed in client-side code but EmailJS mitigates this with domain whitelisting, rate limits, and reCAPTCHA support.
-
----
-
-## Sending Strategy Analysis
-
-Since no temp email API supports sending from the browser, the app needs a sending mechanism. Three viable strategies, in order of recommendation:
-
-### Strategy 1: mailto: Protocol (PRIMARY -- Zero Dependencies)
-
-```
-window.open(`mailto:${broker.email}?subject=${subject}&body=${body}`)
-```
-
-**How it works:** Opens the user's default email client (Gmail web, Outlook, Thunderbird, etc.) with pre-filled recipient, subject, and body. User manually sends.
-
-**Pros:**
-- Zero dependencies, zero API keys, zero cost
-- Works offline (queues in email client)
-- User has full control over the send
-- No CORS issues (no HTTP request)
-- Legally strongest -- email comes from a real email client with proper headers
-
-**Cons:**
-- User must manually send each email (not truly "one click" for all brokers)
-- Sends from user's real email, not the temp email (defeats temp email purpose for sending)
-- URL length limits (~2000 chars in some browsers) can truncate long templates
-- User experience: jarring context switches as email client opens repeatedly
-
-**Mitigation for the real-email problem:** The email template instructs brokers to respond to the temp email address (included in the body), not to reply directly. The "From" address is the user's real email, but the template says "Please send all correspondence regarding this request to: [temp-email]@mail.tm".
-
-### Strategy 2: Clipboard + Webmail (RECOMMENDED DEFAULT)
-
-Instead of `mailto:`, generate the email content and copy it to clipboard. User pastes into their webmail (Gmail, Outlook, etc.) logged into the temp email account -- but wait, mail.tm accounts cannot send. So the user would need to use their own email.
-
-**Better variant:** The app generates all email content, user uses their own email client to send. The temp email is used solely for RECEIVING responses. The email template explicitly states: "Please direct all responses to [temp-email]@mail.tm".
-
-This is actually the cleanest separation of concerns:
-- **User's real email** = sender (has SMTP, has deliverability)
-- **mail.tm temp email** = receiver (monitored by the app)
-
-### Strategy 3: EmailJS Integration (OPTIONAL -- For True Automation)
-
-```typescript
-emailjs.send('service_id', 'template_id', {
-  to_email: broker.email,
-  from_name: user.fullName,
-  reply_to: tempEmailAddress,  // <-- responses go to temp inbox
-  subject: subject,
-  body: body
-});
-```
-
-**Pros:**
-- True one-click automation (no user interaction per broker)
-- Can set Reply-To to the temp email address
-- Works entirely in browser
-
-**Cons:**
-- 200 emails/month free limit (may not be enough for 100+ brokers in one campaign)
-- Requires EmailJS account setup (API key, service, template)
-- API key exposed in client-side code
-- "From" address is the EmailJS service's domain, not the user's -- may reduce deliverability
-- Adds external service dependency to a "no server, no accounts" tool
-
-**Verdict:** Offer as optional power-user feature. Default to mailto:/clipboard approach.
-
----
-
-## State Model
-
-### Campaign State Machine
-
-```
-                    +---> SENDING (bulk send in progress)
-                    |           |
-SETUP --> ACTIVE ---+           v
-  |                 |     MONITORING (polling/SSE active)
-  |                 |           |
-  |                 +---> PAUSED (user paused monitoring)
-  |                             |
-  |                             v
-  |                       COMPLETED (all brokers resolved, temp email deleted)
-  v
-ABANDONED (user cancels without completing)
-```
-
-### Broker State Machine
-
-```
-SELECTED --> SENDING --> SENT --> AWAITING_RESPONSE
-                                        |
-                    +-------------------+-------------------+
-                    |                   |                   |
-                    v                   v                   v
-              CONFIRMED           REJECTED          NEEDS_MORE_INFO
-                    |                   |                   |
-                    v                   v                   v
-              COMPLETED           ESCALATED         RESPONDED (user action)
-                                        |                   |
-                                        v                   v
-                                  COMPLETED           CONFIRMED/REJECTED
-                                                           |
-                                                           v
-                                                      COMPLETED
-```
-
-Additional states for deadline tracking:
-- Any `SENT` or `AWAITING_RESPONSE` broker gains an `OVERDUE` flag after 30 days
-- `OVERDUE` is not a state -- it is a computed property based on `sentDate + 30 days`
-
-### State Shape (TypeScript)
-
-```typescript
-interface CampaignState {
-  // Campaign metadata
-  id: string;                    // UUID
-  status: CampaignStatus;
-  createdAt: string;             // ISO 8601
-  completedAt?: string;
-
-  // User identity (never transmitted, only used for template generation)
-  identity: {
-    fullName: string;
-    emails: string[];            // emails the user wants erased
-    phone?: string;
-    address?: string;
-  };
-
-  // Temp email (mail.tm)
-  tempEmail: {
-    address: string;
-    accountId: string;
-    token: string;               // JWT Bearer token
-    tokenExpiresAt: string;
-    createdAt: string;
-  } | null;
-
-  // Broker tracking
-  brokers: Record<string, BrokerStatus>;
-
-  // Settings
-  settings: {
-    sendMethod: 'mailto' | 'clipboard' | 'emailjs';
-    pollingInterval: number;     // seconds (default: 60)
-    emailjsConfig?: {
-      serviceId: string;
-      templateId: string;
-      publicKey: string;
-    };
-  };
-}
-
-interface BrokerStatus {
-  brokerId: string;
-  status: BrokerState;
-  selected: boolean;
-  sentAt?: string;               // ISO 8601
-  sentMethod?: string;
-  responseAt?: string;
-  responseClassification?: ResponseType;
-  responseRaw?: string;          // email body excerpt
-  notes?: string;                // user notes
-}
-
-type CampaignStatus = 'setup' | 'active' | 'sending' | 'monitoring' | 'paused' | 'completed' | 'abandoned';
-type BrokerState = 'selected' | 'sending' | 'sent' | 'awaiting_response' | 'confirmed' | 'rejected' | 'needs_more_info' | 'escalated' | 'completed';
-type ResponseType = 'confirmed' | 'rejected' | 'needs_more_info' | 'auto_reply' | 'unclassified';
+User has 120 selected brokers, daily quota is 100 emails:
+    |
+    v
+Relay Client calculates send schedule:
+    Day 1: brokers[0..99]   -> 100 emails
+    Day 2: brokers[100..119] -> 20 emails
+    |
+    v
+Campaign State stores send queue:
+    campaign.sendQueue = [
+      { day: "2026-04-02", brokerIds: [...100 ids], status: "pending" },
+      { day: "2026-04-03", brokerIds: [...20 ids], status: "pending" },
+    ]
+    |
+    v
+Calendar UI shows the schedule visually
+    |
+    v
+On each scheduled day (when user opens app):
+    1. Check if today's batch is due
+    2. If yes, auto-send (or prompt user to confirm)
+    3. Update queue status: "pending" -> "sent" / "partial"
+    |
+    v
+Campaign resume across sessions:
+    - Queue persists in localStorage + file save
+    - On app load, check queue for pending batches
+    - Resume sending from where it left off
 ```
 
 ---
 
-## brokers.json Loading Strategy
+## E2E Encryption Architecture
 
-The broker database is a separate JSON file that lives alongside the app bundle. This enables community contributions via GitHub PRs without touching app code.
+### Why E2E Encryption
 
-### Loading Order
+The Worker decrypts emails only transiently (in Worker memory during the Resend API call). It immediately re-encrypts the reply content before storing in KV. The domain owner (you, the developer) cannot read stored emails in KV because:
+
+1. The Worker generates a fresh ECDH key pair **per alias** (not a global key)
+2. The shared secret is derived from (Worker alias-specific private key + User public key)
+3. The Worker's per-alias private key exists only in KV, never exported
+4. KV values are encrypted with AES-256-GCM using the derived shared secret
+5. Without the user's private key (which never leaves their browser), KV values are unreadable
+
+### Key Exchange Protocol
 
 ```
-1. App starts
-2. Try: fetch('./brokers.json')   // relative path, works for file:// and http://
-3. If fetch fails (file:// CORS in some browsers):
-   Try: embedded fallback broker list (compiled into the bundle)
-4. User can also: "Load Custom Brokers" button
-   --> browser-fs-access fileOpen() with .json filter
-   --> Parse, validate schema, merge/replace
+Registration:
+
+  Browser                          Worker
+  -------                          ------
+  Generate ECDH P-256 key pair
+  Export publicKey as JWK
+                    --- POST /register { publicKey } --->
+                                   Generate ECDH P-256 key pair for this alias
+                                   Store alias privateKey in KV (encrypted at rest)
+                                   Store user publicKey in KV
+                    <-- { alias, workerPublicKey } ---
+  Derive sharedKey = ECDH(
+    userPrivateKey,
+    workerPublicKey
+  )
+  Store privateKey locally
+  (JWK in campaign state,
+   never transmitted)
 ```
 
-### brokers.json Schema
+### Encryption Flow (Outbound)
 
-```typescript
-interface BrokersDatabase {
-  version: string;               // semver
-  lastUpdated: string;           // ISO 8601
-  sources: string[];             // attribution
-  brokers: Broker[];
-}
+```
+Browser:
+  plaintext = { subject: "GDPR...", body: "Dear DPO..." }
+  iv = crypto.getRandomValues(new Uint8Array(12))
+  ciphertext = AES-256-GCM.encrypt(sharedKey, iv, plaintext)
+  --> sends { ciphertext, iv } to Worker
 
-interface Broker {
-  id: string;                    // kebab-case unique ID
-  name: string;                  // display name
-  type: string;                  // "People Search", "Credit Bureau", etc.
-  email: string;                 // privacy/DPO email
-  portal?: string;               // opt-out portal URL
-  region: string;                // "US", "UK", "EU", "Global", "UK/EU"
-  category: string;              // for grouping: "people-search", "credit", "marketing", etc.
-  gdprApplies: boolean;          // true for EU/UK/Global
-  ccpaApplies: boolean;          // true for US/Global
-  notes?: string;                // special instructions
-  lastVerified?: string;         // ISO 8601 date
-}
+Worker:
+  Derives same sharedKey = ECDH(workerPrivateKey, userPublicKey)
+  plaintext = AES-256-GCM.decrypt(sharedKey, iv, ciphertext)
+  --> Sends plaintext email via Resend
+  --> Discards plaintext from memory
 ```
 
-### Validation
+### Encryption Flow (Inbound Reply)
 
-On load, validate the JSON against the schema. If any broker entry is malformed, skip that entry and log a warning (do not fail the entire load). Show a count of loaded/skipped brokers to the user.
+```
+Worker (email handler):
+  Receives reply email from broker
+  Parses with postal-mime: { from, subject, text, html }
+  Derives sharedKey = ECDH(workerPrivateKey, userPublicKey)
+  iv = crypto.getRandomValues(new Uint8Array(12))
+  encryptedReply = AES-256-GCM.encrypt(sharedKey, iv, replyContent)
+  Stores encryptedReply in KV
+  Discards plaintext from memory
+
+Browser (on poll):
+  Fetches encryptedReply from Worker
+  Derives same sharedKey = ECDH(userPrivateKey, workerPublicKey)
+  plaintext = AES-256-GCM.decrypt(sharedKey, iv, encryptedReply)
+  Displays to user
+```
+
+### Crypto Implementation Details
+
+```javascript
+// Both browser and Cloudflare Workers support the same Web Crypto API
+
+// Key generation
+const keyPair = await crypto.subtle.generateKey(
+  { name: 'ECDH', namedCurve: 'P-256' },
+  true,  // extractable (for JWK export/import)
+  ['deriveKey']
+);
+
+// Export public key as JWK (for transmission)
+const pubJwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey);
+
+// Derive shared AES key from ECDH
+const sharedKey = await crypto.subtle.deriveKey(
+  { name: 'ECDH', public: otherPartyPublicKey },
+  myPrivateKey,
+  { name: 'AES-GCM', length: 256 },
+  false,  // not extractable
+  ['encrypt', 'decrypt']
+);
+
+// Encrypt
+const iv = crypto.getRandomValues(new Uint8Array(12));
+const ciphertext = await crypto.subtle.encrypt(
+  { name: 'AES-GCM', iv },
+  sharedKey,
+  new TextEncoder().encode(JSON.stringify(plaintext))
+);
+
+// Decrypt
+const decrypted = await crypto.subtle.decrypt(
+  { name: 'AES-GCM', iv },
+  sharedKey,
+  ciphertext
+);
+const plaintext = JSON.parse(new TextDecoder().decode(decrypted));
+```
+
+**Confidence: HIGH** -- ECDH P-256 and AES-256-GCM are both supported in Cloudflare Workers Web Crypto API (verified via official docs) and in all modern browsers. The W3C Web Cryptography API Level 2 spec governs both environments.
+
+### Key Persistence
+
+The user's private key must survive across sessions. Two storage strategies:
+
+1. **JWK in campaign state** (recommended): Export the CryptoKey as JWK, store in the campaign signal. Persists to localStorage (auto-save) and to the JSON save file. On reload, import the JWK back into a CryptoKey via `crypto.subtle.importKey('jwk', ...)`.
+
+2. **IndexedDB CryptoKey store** (alternative): Store the CryptoKey directly in IndexedDB as a non-extractable key. More secure (key material cannot be read even by JS), but does not survive file export/import. Not recommended for a portable app that relies on file-based persistence.
+
+**Decision: Use JWK export.** The private key in the campaign JSON file is acceptable because:
+- The file is local-only (never uploaded anywhere)
+- Without the Worker's per-alias private key (stored in KV, never exported), the user's private key alone cannot decrypt anything
+- The key pair is ephemeral -- generated per campaign, discarded when the campaign completes
+
+### Threat Model
+
+| Threat | Mitigation |
+|--------|-----------|
+| Domain owner reads KV | All email content encrypted with per-alias shared key. Owner has Worker code but not user's private key. |
+| Attacker compromises KV | Same as above. Encrypted at rest with AES-256-GCM. |
+| Attacker compromises Worker code | Could modify Worker to log plaintext during transit. Mitigated by: open-source code, reproducible builds, code review. This is the standard trust boundary for any server-side component. |
+| Attacker intercepts HTTPS | TLS protects in-transit. Even without TLS, content is E2E encrypted. |
+| User loses private key | Campaign cannot decrypt replies. User must start a new campaign with a new alias. Documented clearly in UI. |
+| Resend reads email content | Resend processes plaintext email for delivery. This is inherent to email -- SMTP is not encrypted end-to-end. The E2E encryption protects storage, not SMTP transit. |
+
+**Important caveat:** The Worker necessarily sees plaintext email content during the Resend API call (it must decrypt to construct the SMTP message). True zero-knowledge would require the user's browser to call Resend directly, but Resend blocks CORS from browsers. The E2E encryption protects **stored data** (KV) and ensures the domain owner cannot retroactively read emails by inspecting KV. It does NOT prevent a malicious Worker from logging plaintext during execution. This is documented honestly on the About page.
 
 ---
 
-## Offline vs Online Behavior
+## Cloudflare KV Schema
 
-### Online (Required for Core Functionality)
+### Namespace: RELAY_STATE
 
-| Operation | Requires Internet | API |
-|-----------|------------------|-----|
-| Create temp email | YES | mail.tm POST /accounts |
-| Authenticate | YES | mail.tm POST /token |
-| Monitor inbox | YES | mail.tm GET /messages or SSE |
-| Send via EmailJS | YES | EmailJS API |
-| Open mailto: link | NO (queues locally) | mailto: protocol |
+| Key Pattern | Value | TTL | Purpose |
+|-------------|-------|-----|---------|
+| `alias:{alias}:meta` | `{ alias, createdAt, expiresAt, brokerCount, lastActivity }` | 60 days | Alias metadata and lifecycle |
+| `alias:{alias}:pubkey` | `{ jwk: <user's ECDH public key JWK> }` | 60 days | User's public key for encryption |
+| `alias:{alias}:workerkey` | `{ jwk: <worker's ECDH private key JWK> }` | 60 days | Worker's per-alias private key (never exposed via API) |
+| `alias:{alias}:queue` | `[{ brokerId, to, encrypted, status, scheduledFor }]` | 60 days | Pending send queue (encrypted payloads) |
+| `alias:{alias}:sent:{brokerId}` | `{ sentAt, resendMessageId, status }` | 60 days | Per-broker send record |
+| `alias:{alias}:replies` | `[{ messageId, from, receivedAt }]` | 60 days | Reply index (unencrypted metadata for filtering) |
+| `alias:{alias}:msg:{messageId}` | `{ encrypted: { ciphertext, iv }, from, receivedAt }` | 60 days | Individual encrypted reply content |
+| `relay:registry` | `[{ domain, resendApiKeyHash, maxDaily, status, healthCheck }]` | none | Relay domain registry (for multi-domain scaling) |
+| `relay:stats` | `{ totalSent, totalReplies, activeAliases, ... }` | none | Aggregate relay statistics |
 
-### Offline (Graceful Degradation)
+### KV Free Tier Budget Analysis
 
-| Operation | Works Offline |
-|-----------|--------------|
-| Browse broker database | YES (embedded or cached) |
-| Edit identity info | YES (state in memory) |
-| Generate email templates | YES (pure string generation) |
-| Copy templates to clipboard | YES |
-| View dashboard/stats | YES (from saved state) |
-| Save/load progress files | YES (File System API) |
-| View legal reference pages | YES (bundled in app) |
+| Operation | Daily Free Limit | Expected Daily Usage (100 users) | Verdict |
+|-----------|-----------------|----------------------------------|---------|
+| Reads | 100,000 | ~5,000 (50 polls/user x 100 users) | Comfortable |
+| Writes | 1,000 | ~200 (2 writes/send x 100 sends) | Comfortable |
+| Deletes | 1,000 | ~10 (expired alias cleanup) | Comfortable |
+| Lists | 1,000 | ~100 (reply index lookups) | Comfortable |
+| Storage | 1 GB | ~50 MB (500 bytes/message x 100K messages) | Comfortable |
 
-### Offline Detection Strategy
+**The 1,000 writes/day limit is the binding constraint.** Each email send requires ~2 KV writes (send record + queue update). Each inbound reply requires ~2 KV writes (message storage + reply index update). At 100 emails sent + 50 replies received per day, that is ~300 writes. Leaves headroom for ~350 more operations.
 
-```typescript
-// Simple approach: navigator.onLine + periodic connectivity check
-const isOnline = () => navigator.onLine;
-
-// Before any API call:
-if (!isOnline()) {
-  showNotification('You are offline. Inbox monitoring paused. You can still browse brokers and generate templates.');
-  return;
-}
-```
-
-When the app detects it is offline, inbox monitoring pauses automatically. When connectivity returns, monitoring resumes with a catch-up poll (fetch all messages since last check).
+**Scaling note:** If usage exceeds free tier, the $5/month paid plan provides 1 million writes/day -- effectively unlimited for this use case.
 
 ---
 
-## Build & Distribution Architecture
+## Relay Registry and Health Checking
 
-### Vite + Single-File Output
+### Registry Format
 
-Use Vite with `vite-plugin-singlefile` to produce a single `index.html` file containing all JS, CSS, and assets inlined.
+The relay registry enables multi-domain scaling. Contributors donate $2/year domains, each adding 3,000 emails/month capacity.
+
+```javascript
+// KV key: relay:registry
+{
+  domains: [
+    {
+      domain: "erasurekit.uk",         // primary domain
+      workerUrl: "https://relay.erasurekit.uk",
+      resendRegion: "eu-west-1",       // Resend EU region
+      maxDailyEmails: 100,             // Resend free tier
+      maxMonthlyEmails: 3000,          // Resend free tier
+      status: "active",                // active | degraded | offline
+      lastHealthCheck: "2026-04-01T12:00:00Z",
+      currentDailyUsage: 42,
+      currentMonthlyUsage: 1250,
+      addedAt: "2026-04-01T00:00:00Z",
+      owner: "project",               // "project" or contributor alias
+    },
+    {
+      domain: "erasure-relay-2.uk",    // contributor domain
+      workerUrl: "https://relay.erasure-relay-2.uk",
+      resendRegion: "eu-west-1",
+      maxDailyEmails: 100,
+      maxMonthlyEmails: 3000,
+      status: "active",
+      lastHealthCheck: "2026-04-01T12:00:00Z",
+      currentDailyUsage: 0,
+      currentMonthlyUsage: 0,
+      addedAt: "2026-04-15T00:00:00Z",
+      owner: "contributor-abc",
+    },
+  ]
+}
+```
+
+### Load Balancing Strategy
+
+The frontend picks a relay domain using least-loaded selection:
+
+```javascript
+// Frontend: select relay with most remaining daily quota
+function selectRelay(registry) {
+  const active = registry.domains.filter(d => d.status === 'active');
+  if (active.length === 0) throw new Error('No active relays');
+
+  // Sort by remaining daily capacity (descending)
+  active.sort((a, b) => {
+    const remainA = a.maxDailyEmails - a.currentDailyUsage;
+    const remainB = b.maxDailyEmails - b.currentDailyUsage;
+    return remainB - remainA;
+  });
+
+  return active[0];
+}
+```
+
+### Health Checking
+
+```javascript
+// Worker: cron trigger runs every 5 minutes
+export default {
+  async scheduled(event, env) {
+    const registry = JSON.parse(await env.KV.get('relay:registry'));
+    for (const domain of registry.domains) {
+      try {
+        const res = await fetch(`${domain.workerUrl}/health`, {
+          signal: AbortSignal.timeout(5000),
+        });
+        domain.status = res.ok ? 'active' : 'degraded';
+      } catch {
+        domain.status = 'offline';
+      }
+      domain.lastHealthCheck = new Date().toISOString();
+    }
+    await env.KV.put('relay:registry', JSON.stringify(registry));
+  },
+};
+```
+
+### Frontend Health Display
+
+The frontend shows relay health on the About page and in the send UI:
 
 ```
-Source:
-  src/
-    main.tsx          # Entry point
-    App.tsx           # Root component
-    components/       # UI components
-    engine/           # Core logic (composer, monitor, classifier, tracker)
-    state/            # State management (Zustand store)
-    types/            # TypeScript interfaces
-    data/             # Embedded fallback broker list
-  brokers.json        # Separate, loadable broker database
-  index.html          # Template
-
-Build output:
-  dist/
-    index.html        # Single file, everything inlined (~200-500KB)
-    brokers.json      # Copied alongside (not inlined -- must be editable)
+Relay Status: [=] erasurekit.uk (58/100 remaining today)
+              [=] erasure-relay-2.uk (100/100 remaining today)
+              Total capacity: 158 emails remaining today
 ```
-
-### Distribution Model
-
-```
-GitHub Release:
-  erasure-kit-v1.0.0.zip
-    index.html        # The entire app
-    brokers.json      # Editable broker database
-    README.md         # Usage instructions
-```
-
-Users download the zip, extract, and double-click `index.html`. No server, no install, no build step.
-
-### Why NOT Inline brokers.json
-
-The broker database is deliberately kept as a separate file because:
-1. Community contributors edit it via GitHub PRs
-2. Users can swap in their own curated lists
-3. Updates to the broker DB do not require rebuilding the app
-4. The file is human-readable and inspectable
 
 ---
 
-## Patterns to Follow
+## Worker API Design
 
-### Pattern 1: Service Adapter Pattern (for Email APIs)
+### Endpoints
 
-Abstract the mail.tm API behind an adapter interface so the app can swap email providers if mail.tm goes down or changes its API.
+| Method | Path | Purpose | Auth |
+|--------|------|---------|------|
+| `POST` | `/register` | Create new alias with user's public key | None (alias is the auth) |
+| `POST` | `/send` | Submit encrypted email batch for sending | Alias + signature |
+| `GET` | `/replies/:alias` | List reply metadata since timestamp | Alias in URL |
+| `GET` | `/replies/:alias/msg/:id` | Get encrypted reply content | Alias in URL |
+| `GET` | `/status/:alias` | Get alias status, quota, send history | Alias in URL |
+| `GET` | `/health` | Worker health check | None |
+| `GET` | `/registry` | Get relay registry (public) | None |
+| `DELETE` | `/alias/:alias` | Delete alias and all associated data | Alias + signature |
+| `email` | (Email Routing) | Process inbound emails | N/A (Cloudflare internal) |
 
-```typescript
-interface TempEmailService {
-  getDomains(): Promise<string[]>;
-  createAccount(address: string, password: string): Promise<Account>;
-  getToken(address: string, password: string): Promise<string>;
-  getMessages(token: string): Promise<Message[]>;
-  getMessage(token: string, id: string): Promise<MessageDetail>;
-  deleteAccount(token: string, id: string): Promise<void>;
-  // Optional: SSE subscription
-  subscribeToMessages?(token: string, onMessage: (msg: Message) => void): () => void;
-}
+### Authentication Model
 
-class MailTmService implements TempEmailService {
-  private baseUrl = 'https://api.mail.tm';
-  // ... implementation using fetch()
-}
-```
+No user accounts. Authentication uses the alias itself as an identifier, combined with a signature proving the caller holds the private key:
 
-**Why:** mail.tm is free and reliable today, but it could go offline, change its API, or add rate limits. The adapter pattern lets the app support Guerrilla Mail or other services as fallbacks with minimal code change.
-
-**Confidence: HIGH** -- Standard software engineering pattern. No risk.
-
-### Pattern 2: Optimistic State Updates with Reconciliation
-
-Update broker status optimistically in the UI, then reconcile with actual API responses.
-
-```typescript
-// User clicks "Send" --> immediately update state
-updateBrokerStatus(brokerId, 'sent');
-
-// If the send actually fails (mailto: doesn't guarantee delivery):
-// State stays as 'sent' -- user can manually revert if needed
-// No way to programmatically verify mailto: delivery
-```
-
-**Why:** mailto: links provide no delivery confirmation. The app cannot know if the user actually clicked Send in their email client. Treat the status update as a user assertion ("I sent this"), not a verified fact.
-
-### Pattern 3: Progressive Enhancement for Persistence
-
-```typescript
-import { fileSave, fileOpen } from 'browser-fs-access';
-
-async function saveProgress(state: CampaignState) {
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-
-  try {
-    // Modern browsers: File System Access API (save in place)
-    await fileSave(blob, {
-      fileName: `erasure-kit-${state.id}.json`,
-      extensions: ['.json'],
-      description: 'ErasureKit Progress File',
-    });
-  } catch (err) {
-    // Fallback: <a download> (triggers file download)
-    // browser-fs-access handles this automatically
-  }
-}
-```
-
-**Why:** File System Access API is Chromium-only (~30% browser coverage). `browser-fs-access` provides transparent fallback to download/upload for Firefox and Safari. Same API, different underlying mechanism.
-
-**Confidence: HIGH** -- This is exactly how Excalidraw handles persistence, and it is a Google Chrome Labs maintained library.
-
-### Pattern 4: Token Refresh Guard
-
-mail.tm JWT tokens expire. Wrap all API calls in a guard that refreshes the token before making requests.
-
-```typescript
-async function authenticatedFetch(url: string, options: RequestInit = {}) {
-  let token = state.tempEmail.token;
-
-  // Check if token is about to expire (within 5 minutes)
-  if (isTokenExpiring(token, 300)) {
-    token = await refreshToken(state.tempEmail.address, storedPassword);
-    updateState({ tempEmail: { ...state.tempEmail, token } });
-  }
+```javascript
+// Frontend: sign a challenge to prove key ownership
+async function authenticatedRequest(url, body, privateKey) {
+  const timestamp = Date.now().toString();
+  const payload = JSON.stringify(body) + timestamp;
+  const signature = await crypto.subtle.sign(
+    { name: 'ECDSA', hash: 'SHA-256' },
+    privateKey,  // same key pair used for ECDH
+    new TextEncoder().encode(payload)
+  );
 
   return fetch(url, {
-    ...options,
+    method: 'POST',
     headers: {
-      ...options.headers,
-      'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
+      'X-Alias': alias,
+      'X-Timestamp': timestamp,
+      'X-Signature': base64Encode(signature),
     },
+    body: JSON.stringify(body),
   });
 }
+
+// Worker: verify signature
+async function verifyRequest(request, env) {
+  const alias = request.headers.get('X-Alias');
+  const timestamp = request.headers.get('X-Timestamp');
+  const signature = base64Decode(request.headers.get('X-Signature'));
+
+  // Reject if timestamp is too old (5 minute window)
+  if (Date.now() - parseInt(timestamp) > 300000) return null;
+
+  // Look up user's public key
+  const pubkeyData = await env.KV.get(`alias:${alias}:pubkey`, 'json');
+  if (!pubkeyData) return null;
+
+  const publicKey = await crypto.subtle.importKey(
+    'jwk', pubkeyData.jwk,
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    false, ['verify']
+  );
+
+  const body = await request.text();
+  const payload = body + timestamp;
+  const valid = await crypto.subtle.verify(
+    { name: 'ECDSA', hash: 'SHA-256' },
+    publicKey,
+    signature,
+    new TextEncoder().encode(payload)
+  );
+
+  return valid ? alias : null;
+}
 ```
+
+**Note on dual-use keys:** ECDH and ECDSA both use P-256 curves but have different key usages. The key pair must be generated with `['deriveKey', 'deriveBits']` for ECDH and separately with `['sign', 'verify']` for ECDSA. In practice, generate two key pairs per alias: one for encryption (ECDH), one for authentication (ECDSA). Or use a single key pair and derive both capabilities -- but Web Crypto API does not allow combining `deriveKey` and `sign` usages on one key. **Use two key pairs** (encryption + signing).
+
+---
+
+## Campaign State Extension
+
+### Modified Campaign Schema
+
+```javascript
+// Extended createEmptyCampaign() for v2.0
+export function createEmptyCampaign() {
+  return {
+    version: 3,  // bumped from 2
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    identity: {
+      fullName: '',
+      emails: [''],
+      phone: '',
+      address: '',
+    },
+    brokers: { selected: [], templates: {} },
+
+    // v2.0 relay fields (NEW)
+    relay: {
+      alias: null,              // e.g. "a7k9x"
+      email: null,              // e.g. "a7k9x@erasurekit.uk"
+      relayUrl: null,           // e.g. "https://relay.erasurekit.uk"
+      relayDomain: null,        // e.g. "erasurekit.uk"
+      workerPublicKey: null,    // JWK -- worker's ECDH public key
+      registeredAt: null,       // ISO timestamp
+      expiresAt: null,          // ISO timestamp (60-day TTL)
+    },
+    keyPair: {
+      encryptionPublic: null,   // JWK -- user's ECDH public key
+      encryptionPrivate: null,  // JWK -- user's ECDH private key (LOCAL ONLY)
+      signingPublic: null,      // JWK -- user's ECDSA public key
+      signingPrivate: null,     // JWK -- user's ECDSA private key (LOCAL ONLY)
+    },
+    sendQueue: [],              // [{ day, brokerIds, status }]
+    replyCache: {},             // { [messageId]: decryptedReply }
+
+    // Existing fields (unchanged)
+    tempEmail: null,            // deprecated (was mail.tm)
+    messages: [],               // deprecated (was mail.tm messages)
+    statuses: {},
+    settings: {},
+  };
+}
+```
+
+### Migration from v2 to v3
+
+```javascript
+export function migrateCampaign(data) {
+  if (!data || typeof data !== 'object') return null;
+  if (!data.version) return null;
+  if (data.version > CURRENT_VERSION) return null;
+
+  const empty = createEmptyCampaign();
+
+  if (data.version === 2) {
+    // Migrate v2 -> v3: add relay fields, preserve existing data
+    return {
+      ...empty,
+      ...data,
+      version: 3,
+      relay: empty.relay,        // new
+      keyPair: empty.keyPair,    // new
+      sendQueue: [],             // new
+      replyCache: {},            // new
+      identity: { ...empty.identity, ...(data.identity || {}) },
+      brokers: { ...empty.brokers, ...(data.brokers || {}) },
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  // Standard merge for same version
+  return {
+    ...empty,
+    ...data,
+    identity: { ...empty.identity, ...(data.identity || {}) },
+    brokers: { ...empty.brokers, ...(data.brokers || {}) },
+    relay: { ...empty.relay, ...(data.relay || {}) },
+    keyPair: { ...empty.keyPair, ...(data.keyPair || {}) },
+    updatedAt: new Date().toISOString(),
+    version: CURRENT_VERSION,
+  };
+}
+```
+
+---
+
+## Resend Integration Details
+
+### Domain Setup
+
+1. Add `erasurekit.uk` domain in Resend dashboard
+2. Add DNS records to Cloudflare:
+   - SPF: `v=spf1 include:amazonses.com ~all` (Resend uses AWS SES)
+   - DKIM: Three CNAME records provided by Resend
+   - DMARC: `v=DMARC1; p=none;` (start with monitoring, tighten later)
+3. Verify domain in Resend dashboard
+
+### API Call from Worker
+
+```javascript
+// Worker: send via Resend
+async function sendViaResend(env, fromAlias, toEmail, subject, body) {
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: `ErasureKit <${fromAlias}@erasurekit.uk>`,
+      to: toEmail,
+      reply_to: `${fromAlias}@erasurekit.uk`,
+      subject: subject,
+      text: body,
+      headers: {
+        'X-ErasureKit-Alias': fromAlias,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    if (response.status === 429) {
+      return { status: 'rate_limited', retryAfter: 3600 };
+    }
+    return { status: 'failed', error: error.message };
+  }
+
+  const result = await response.json();
+  return { status: 'sent', resendId: result.id };
+}
+```
+
+### Rate Limiting Strategy
+
+- Resend free tier: 100 emails/day, 3,000/month
+- Resend batch API: max 100 emails per batch request
+- Worker implements a token bucket per relay domain
+- Frontend shows remaining daily quota in the UI
+- If quota exhausted: queue remaining emails for tomorrow
+- Calendar UI shows multi-day send schedule
+
+### Deliverability Considerations
+
+| Concern | Mitigation |
+|---------|-----------|
+| New domain reputation | Start slow (10/day week 1, ramp to 100/day). Resend handles warm-up. |
+| Disposable email blocking | `erasurekit.uk` is a custom domain, NOT on disposable email blocklists. Custom domains are not blocked. |
+| SPF/DKIM/DMARC | Properly configured via Resend. All modern email providers require this. |
+| "On behalf of" display | With proper DKIM signing via Resend, this should not appear. |
+| Bounces | Resend handles bounce processing. Webhook events available for tracking. |
+
+---
+
+## Cloudflare Email Routing Configuration
+
+### Catch-All Rule
+
+In Cloudflare dashboard > Email Routing:
+- **Catch-all rule**: Route to Email Worker
+- **No custom addresses**: All emails go through the Worker
+- This means ANY address `*@erasurekit.uk` is processed by the Worker
+
+### Email Worker Handler
+
+```javascript
+import PostalMime from 'postal-mime';
+
+export default {
+  async email(message, env, ctx) {
+    // 1. Extract alias from "to" address
+    const toAddress = message.to;
+    const alias = toAddress.split('@')[0];
+
+    // 2. Check alias exists
+    const meta = await env.KV.get(`alias:${alias}:meta`, 'json');
+    if (!meta) {
+      // Unknown alias -- reject
+      message.setReject('Unknown recipient');
+      return;
+    }
+
+    // 3. Check alias not expired
+    if (new Date(meta.expiresAt) < new Date()) {
+      message.setReject('Recipient no longer active');
+      return;
+    }
+
+    // 4. Parse email content
+    const rawEmail = await new Response(message.raw).arrayBuffer();
+    const parsed = await PostalMime.parse(rawEmail);
+
+    // 5. Encrypt reply content
+    const replyContent = {
+      from: message.from,
+      subject: parsed.subject,
+      textBody: parsed.text || '',
+      htmlBody: parsed.html || '',
+      receivedAt: new Date().toISOString(),
+    };
+
+    // Load keys and derive shared secret
+    const workerKeyData = await env.KV.get(`alias:${alias}:workerkey`, 'json');
+    const userPubData = await env.KV.get(`alias:${alias}:pubkey`, 'json');
+
+    const workerPrivateKey = await crypto.subtle.importKey(
+      'jwk', workerKeyData.jwk,
+      { name: 'ECDH', namedCurve: 'P-256' },
+      false, ['deriveKey']
+    );
+    const userPublicKey = await crypto.subtle.importKey(
+      'jwk', userPubData.jwk,
+      { name: 'ECDH', namedCurve: 'P-256' },
+      false, []
+    );
+
+    const sharedKey = await crypto.subtle.deriveKey(
+      { name: 'ECDH', public: userPublicKey },
+      workerPrivateKey,
+      { name: 'AES-GCM', length: 256 },
+      false, ['encrypt']
+    );
+
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encrypted = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      sharedKey,
+      new TextEncoder().encode(JSON.stringify(replyContent))
+    );
+
+    // 6. Store encrypted reply
+    const messageId = crypto.randomUUID();
+    await env.KV.put(
+      `alias:${alias}:msg:${messageId}`,
+      JSON.stringify({
+        encrypted: {
+          ciphertext: base64Encode(encrypted),
+          iv: base64Encode(iv),
+        },
+        from: message.from,  // unencrypted for reply index
+        receivedAt: replyContent.receivedAt,
+      }),
+      { expirationTtl: 60 * 86400 }  // 60 days
+    );
+
+    // 7. Update reply index
+    const replyIndex = await env.KV.get(`alias:${alias}:replies`, 'json') || [];
+    replyIndex.push({
+      messageId,
+      from: message.from,
+      receivedAt: replyContent.receivedAt,
+    });
+    await env.KV.put(
+      `alias:${alias}:replies`,
+      JSON.stringify(replyIndex),
+      { expirationTtl: 60 * 86400 }
+    );
+
+    // 8. Update alias activity
+    meta.lastActivity = new Date().toISOString();
+    await env.KV.put(`alias:${alias}:meta`, JSON.stringify(meta), {
+      expirationTtl: 60 * 86400,
+    });
+  },
+};
+```
+
+---
+
+## Frontend Integration Points
+
+### Modified Files
+
+| File | Change Type | What Changes |
+|------|-------------|-------------|
+| `src/lib/campaign.js` | MODIFIED | Add relay fields, bump version to 3, update migration |
+| `src/lib/email-sender.js` | REPLACED | Replace mailto:/clipboard with relay client calls |
+| `src/lib/status-tracker.js` | MODIFIED | Add `QUEUED` and `RELAY_SENT` statuses |
+| `src/app.js` | MODIFIED | Add new page routes (send schedule, relay status) |
+| `src/lib/router.js` | MODIFIED | Add new page IDs |
+
+### New Files
+
+| File | Purpose |
+|------|---------|
+| `src/lib/relay-client.js` | HTTP client for Worker API (register, send, poll, status) |
+| `src/lib/crypto.js` | Web Crypto wrapper (key gen, ECDH, AES-GCM encrypt/decrypt) |
+| `src/pages/Send.js` | Send UI with batch progress, calendar schedule, quota display |
+| `src/pages/Replies.js` | Reply viewer with decrypted messages and classification |
+| `src/components/RelayStatus.js` | Relay health indicator component |
+| `src/components/SendSchedule.js` | Calendar-style send schedule visualization |
+| `worker/index.js` | Cloudflare Worker entry point (HTTP + email handlers) |
+| `worker/wrangler.toml` | Worker configuration (KV bindings, email routing, secrets) |
+
+### Unmodified Files
+
+| File | Why Unchanged |
+|------|--------------|
+| `src/lib/template-engine.js` | Generates { subject, body } -- consumed by relay client instead of mailto: builder |
+| `src/lib/brokers-loader.js` | Loads brokers.json -- no relay dependency |
+| `src/lib/theme.js` | UI chrome -- no relay dependency |
+| `src/lib/notifications.js` | Toast system -- no relay dependency |
+| `src/pages/Identity.js` | Identity form -- no relay dependency |
+| `src/pages/Brokers.js` | Broker selection -- no relay dependency |
+| `src/pages/About.js` | Content page -- will add privacy architecture explanation but no code changes |
+| `src/components/Header.js` | App header -- no relay dependency |
+| `src/components/Footer.js` | Auto-save indicator -- no relay dependency |
+
+---
+
+## Suggested Build Order
+
+Phases are ordered by dependency. Each phase produces independently testable functionality.
+
+```
+Phase 1: Crypto Foundation
+  [1] src/lib/crypto.js
+      - ECDH P-256 key pair generation
+      - ECDSA P-256 key pair generation
+      - AES-256-GCM encrypt/decrypt
+      - JWK export/import for persistence
+      - Unit tests (vitest with Web Crypto polyfill or jsdom)
+  [2] Campaign schema v3 + migration
+      - Add relay/keyPair/sendQueue/replyCache fields
+      - v2 -> v3 migration in migrateCampaign()
+      - Unit tests
+
+Phase 2: Worker Infrastructure
+  [3] worker/ scaffold
+      - wrangler.toml with KV binding, email routing
+      - POST /register endpoint
+      - GET /health endpoint
+      - Resend API integration (send single email)
+      - KV schema for alias storage
+  [4] Email routing handler
+      - email() handler receives inbound
+      - Parse with postal-mime
+      - Encrypt and store in KV
+  [5] Worker API completion
+      - POST /send (batch send)
+      - GET /replies/:alias
+      - GET /replies/:alias/msg/:id
+      - GET /status/:alias
+      - DELETE /alias/:alias
+      - Signature verification
+
+Phase 3: Frontend Relay Client
+  [6] src/lib/relay-client.js
+      - register(publicKey) -> alias
+      - sendBatch(alias, items) -> results
+      - pollReplies(alias, since) -> replies
+      - getReplyContent(alias, messageId) -> encrypted content
+      - getStatus(alias) -> { quota, sent, replies }
+  [7] Replace email-sender.js
+      - sendToBroker() now uses relay client
+      - batchSend() now queues to Worker
+      - Quota-aware scheduling
+
+Phase 4: Send UI
+  [8] Send page with schedule calendar
+      - Shows daily send batches
+      - Progress bar during batch send
+      - Quota remaining display
+  [9] Relay status component
+      - Health indicator in header
+      - Registry info on About page
+
+Phase 5: Reply Monitoring
+  [10] Reply polling + decryption
+      - Periodic poll in background
+      - Decrypt replies using shared key
+      - Classify responses
+      - Update broker statuses
+  [11] Reply viewer page
+      - List of decrypted replies
+      - Per-broker reply history
+      - Manual status override
+
+Phase 6: Multi-Domain Scaling
+  [12] Relay registry
+      - Load balancing across domains
+      - Contributor donation flow documentation
+  [13] Privacy documentation
+      - About page architecture explanation
+      - Honest threat model disclosure
+```
+
+**Critical path:** Phase 1 -> Phase 2 -> Phase 3 -> Phase 4. Phases 5 and 6 can overlap with Phase 4.
+
+**Key dependency:** The Worker must be deployed and accessible before the frontend relay client can be tested against real infrastructure. Use `wrangler dev` for local development, but email routing requires the domain to be live on Cloudflare.
 
 ---
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Storing Temp Email Password in State File
+### Anti-Pattern 1: Global Worker Key Pair
 
-**What:** Saving the mail.tm account password to the JSON progress file.
+**What:** Using a single ECDH key pair for all aliases.
 
-**Why bad:** The progress file is a plain JSON file that could be shared, backed up to cloud storage, or accidentally committed to git. The password would be exposed.
+**Why bad:** Compromise of one shared secret exposes ALL user data. The domain owner could derive every user's shared key.
 
-**Instead:** Store the password only in memory (Zustand store). On app reload, the user re-enters or the app generates a new temp account. Alternatively, store an encrypted version using a user-provided passphrase, but this adds complexity for v1.
+**Instead:** Generate a fresh ECDH key pair per alias. Store in KV under `alias:{alias}:workerkey`. Delete when alias expires.
 
-### Anti-Pattern 2: Unlimited Parallel API Calls
+### Anti-Pattern 2: Storing Plaintext in KV
 
-**What:** Sending all broker emails and polling the inbox simultaneously with no rate limiting.
+**What:** Storing email subjects, bodies, or reply content in KV without encryption.
 
-**Why bad:** mail.tm has an 8 QPS rate limit. Blasting 100+ requests will get throttled or banned.
+**Why bad:** Domain owner (or anyone with KV access) can read all user emails.
 
-**Instead:** Queue API calls with a concurrency limiter. Maximum 2-3 requests in flight at once. Add exponential backoff on 429 responses.
+**Instead:** Always encrypt with the per-alias shared key before KV storage. Only store unencrypted metadata needed for indexing (from address, receivedAt timestamp).
 
-### Anti-Pattern 3: Polling with Fixed Short Interval
+### Anti-Pattern 3: Polling Without Rate Control
 
-**What:** Polling mail.tm every 5 seconds for new messages.
+**What:** Frontend polls `/replies/:alias` every 5 seconds.
 
-**Why bad:** Wastes API quota (8 QPS limit), drains battery on mobile, provides no better UX since broker responses take hours/days.
+**Why bad:** Burns through KV read quota (100K/day free). Broker replies take hours/days, not seconds.
 
-**Instead:** Use SSE (Mercure) if available. Fall back to polling at 60-second intervals. When a response is detected, temporarily increase polling frequency for 5 minutes (in case the broker sends multiple messages).
+**Instead:** Poll every 60 seconds while the app is in the foreground. Use `document.hidden` to pause polling when the tab is backgrounded. On visibility resume, do a catch-up poll.
 
-### Anti-Pattern 4: Relying on localStorage for Critical Data
+### Anti-Pattern 4: Sending All Emails in One Batch
 
-**What:** Using `localStorage` as the primary persistence mechanism (as the reference prototype does).
+**What:** Submitting 169 brokers to the Worker in a single POST /send request.
 
-**Why bad:** localStorage has a 5-10MB limit, is silently cleared by browsers under storage pressure, cannot be backed up/transferred, and is tied to origin (meaningless for `file://` protocol where each folder is a different origin).
+**Why bad:** Resend has a 100/day limit. The Worker will fail partway through, leaving some brokers sent and others not, with unclear state.
 
-**Instead:** Use File System Access API via `browser-fs-access`. The user explicitly saves to a file they control. localStorage can be used as a secondary cache for session continuity (auto-save every 30 seconds), but the file is the authoritative copy.
+**Instead:** Frontend calculates the schedule (100/day) and sends in daily batches. Each batch is a separate POST /send with at most 100 items. Queue state persists in campaign state for resume across sessions.
 
----
+### Anti-Pattern 5: Blocking on Inbound Email Processing
 
-## Suggested Build Order (Dependencies)
+**What:** The email() handler does heavy processing synchronously.
 
-The components have clear dependency chains that dictate build order:
+**Why bad:** Email Workers have a 30-second execution limit. Complex encryption + multiple KV writes could hit it.
 
-```
-Phase 1: Foundation
-  [1] State Manager (Zustand store + types)          -- everything depends on this
-  [2] Persistence Layer (browser-fs-access save/load) -- state needs persistence
-  [3] brokers.json schema + loader                    -- data layer
-
-Phase 2: Core Engine
-  [4] Email Composer (template generation)            -- needs state + brokers
-  [5] mail.tm Service Adapter                         -- needs state for credentials
-  [6] Inbox Monitor (polling first, SSE later)        -- needs mail.tm service
-  [7] Response Classifier                             -- needs inbox monitor output
-  [8] Deadline Tracker                                -- needs state timestamps
-
-Phase 3: UI
-  [9]  Identity Form                                  -- writes to state
-  [10] Broker Manager (list, filter, select)          -- reads brokers, writes state
-  [11] Send Interface (mailto: + clipboard)           -- uses composer
-  [12] Dashboard (stats, deadlines, responses)        -- reads state
-
-Phase 4: Polish & Distribution
-  [13] Vite single-file build                         -- bundles everything
-  [14] Legal reference pages                          -- static content
-  [15] Escalation template generator                  -- uses state + templates
-  [16] EmailJS integration (optional)                 -- alternative send path
-```
-
-**Key dependency:** Nothing in Phase 2+ works without the State Manager (Phase 1). The mail.tm service adapter is needed before inbox monitoring. The response classifier needs the inbox monitor. The dashboard is pure read-only and can be built last.
-
----
-
-## Scalability Considerations
-
-| Concern | 1-10 brokers | 50-100 brokers | 500+ brokers |
-|---------|--------------|----------------|--------------|
-| Email sending | Manual mailto: OK | Tedious but works | Need EmailJS or batch mailto: |
-| Inbox monitoring | 60s polling fine | 60s polling fine | Same -- responses are slow |
-| State file size | <10KB | <50KB | <200KB (still fine) |
-| UI rendering | Trivial | Needs virtual scrolling? | Definitely needs virtual scrolling |
-| API rate limits | No concern | 8 QPS OK with queuing | 8 QPS OK -- sending is spread over time |
-| Email template generation | Instant | Instant | Instant (pure string ops) |
-
-**Verdict:** The architecture scales naturally to 500+ brokers. The bottleneck is user patience for manual sending via mailto:, not technical limitations. At 500+ brokers, EmailJS automation becomes practically necessary.
-
----
-
-## Technology Choices (Architecture-Driven)
-
-| Need | Choice | Why |
-|------|--------|-----|
-| **State management** | Zustand | Lightweight (1KB), works outside React, no boilerplate, perfect for single-page app |
-| **Persistence** | browser-fs-access | Google Chrome Labs library, transparent File System API + fallback |
-| **Temp email** | mail.tm | Verified CORS, free, no API key, SSE support via Mercure |
-| **Email sending** | mailto: (primary) + EmailJS (optional) | Zero dependency default, optional automation |
-| **HTTP client** | Native fetch() | No axios needed -- simple REST calls, browser-native |
-| **Build** | Vite + vite-plugin-singlefile | Single HTML output for portability |
-| **UI framework** | React (via Vite) | Reference prototype already React, fast iteration |
-| **Styling** | Tailwind CSS | Inlines perfectly into single-file build, reference prototype already uses it |
+**Instead:** Use `ctx.waitUntil()` for KV writes after the critical path (parsing + alias validation). Reject unknown aliases immediately to fail fast.
 
 ---
 
 ## Sources
 
-- [mail.tm API Documentation](https://docs.mail.tm/) - HIGH confidence (verified directly)
-- [mail.tm API Swagger](https://api.mail.tm/) - HIGH confidence
-- [mail.tm CORS headers](https://api.mail.tm/) - HIGH confidence (verified via curl preflight)
-- [Guerrilla Mail API](https://www.guerrillamail.com/GuerrillaMailAPI.html) - HIGH confidence (verified via curl + WebFetch)
-- [EmailJS](https://www.emailjs.com/) - MEDIUM confidence (WebSearch + official site)
-- [Resend CORS Policy](https://resend.com/docs/knowledge-base/how-do-i-fix-cors-issues) - HIGH confidence (official docs confirm no browser CORS)
-- [browser-fs-access](https://github.com/GoogleChromeLabs/browser-fs-access) - HIGH confidence (Google Chrome Labs maintained)
-- [vite-plugin-singlefile](https://github.com/richardtallent/vite-plugin-singlefile) - HIGH confidence (well-maintained, purpose-built)
-- [File System Access API - MDN](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API) - HIGH confidence
-- [File System Access - Can I Use](https://caniuse.com/native-filesystem-api) - HIGH confidence (~30% browser support)
-- [Mercure Protocol](https://mercure.rocks/spec) - MEDIUM confidence (mail.tm uses it, but SSE endpoint not directly verified)
-- [Datenanfragen.de GDPR Templates](https://github.com/datenanfragen/website) - HIGH confidence (CC0 licensed, well-maintained)
-- [Consumer Reports Data Deletion Tool](https://innovation.consumerreports.org/new-open-source-project-automates-data-deletion-requests-by-email/) - MEDIUM confidence
+### HIGH Confidence (Official docs, verified)
+
+- [Cloudflare Email Workers](https://developers.cloudflare.com/email-routing/email-workers/) -- Email routing to Worker handler
+- [Cloudflare Email Workers Runtime API](https://developers.cloudflare.com/email-routing/email-workers/runtime-api/) -- ForwardableEmailMessage interface
+- [Cloudflare Web Crypto API](https://developers.cloudflare.com/workers/runtime-apis/web-crypto/) -- Supported algorithms (ECDH, AES-GCM confirmed)
+- [Cloudflare KV Limits](https://developers.cloudflare.com/kv/platform/limits/) -- 100K reads, 1K writes/day free
+- [Cloudflare KV Pricing](https://developers.cloudflare.com/kv/platform/pricing/) -- Free tier details
+- [Resend + Cloudflare Workers tutorial](https://developers.cloudflare.com/workers/tutorials/send-emails-with-resend/) -- Official integration guide
+- [Resend + Workers example](https://resend.com/docs/send-with-cloudflare-workers) -- Resend official docs
+- [Resend Rate Limits](https://resend.com/docs/api-reference/rate-limit) -- 100/day, 3000/month free
+- [Resend Custom Headers](https://resend.com/changelog/custom-email-headers) -- Reply-To support
+- [MDN SubtleCrypto](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto) -- ECDH, AES-GCM reference
+- [MDN SubtleCrypto.deriveKey()](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/deriveKey) -- ECDH key derivation examples
+- [W3C Web Cryptography API Level 2](https://w3c.github.io/webcrypto/) -- W3C spec
+
+### MEDIUM Confidence (Community verified, multiple sources agree)
+
+- [postal-mime for Email Workers](https://blog.emailengine.app/how-to-parse-emails-with-cloudflare-email-workers/) -- Parsing inbound emails
+- [Process incoming emails with Workers + D1](https://dev.to/elvisans/how-to-process-incoming-emails-and-trigger-webhooks-in-app-actions-and-more-using-cloudflare-5d07) -- Full inbound processing pattern
+- [Cloudflare Email Routing catch-all](https://developers.cloudflare.com/email-routing/setup/email-routing-addresses/) -- Catch-all to Worker
+- [Resend domain authentication](https://dmarcdkim.com/setup/how-to-setup-resend-spf-dkim-and-dmarc-records) -- SPF/DKIM setup
+- [Disposable email blocklists](https://gist.github.com/philippdormann/989d79da6526c108076b915e283d1904) -- 5K+ temp domains listed (erasurekit.uk is NOT on these)
+
+### LOW Confidence (Single source, needs validation)
+
+- [Cloudflare Email Service private beta](https://blog.cloudflare.com/email-service/) -- Native email sending from Workers. Could replace Resend if it exits beta. Monitor but do not depend on.
+- [Workers KV rearchitecture](https://www.infoq.com/news/2025/08/cloudflare-workers-kv/) -- KV reliability improvements after 2025 GCP outage. Relevant for trust in KV as storage layer.

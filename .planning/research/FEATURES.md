@@ -1,198 +1,279 @@
-# Feature Landscape
+# Feature Landscape: v2.0 Relay-Based Email Architecture
 
-**Domain:** GDPR data erasure automation (portable, serverless, open-source)
-**Researched:** 2026-03-28
+**Domain:** GDPR data erasure automation -- relay-based automated email sending
+**Researched:** 2026-04-01
+**Milestone:** v2.0 (builds on completed v1.0: app shell, identity input, broker database, email templates, status tracking)
 
-## Competitive Landscape Summary
+## Context: What v1.0 Already Delivers
 
-The data removal market splits into three tiers:
+The following are BUILT and SHIPPED. This document does NOT re-evaluate them -- it only covers new v2.0 features.
 
-1. **Paid SaaS services** ($100-300/year): DeleteMe, Incogni, Optery, Privacy Bee, Aura. These employ automation + human agents, cover 200-950+ brokers, handle recurring removal cycles, and bundle identity protection features. They are subscription-based and US-centric.
+| Built Feature | Phase | Status |
+|---------------|-------|--------|
+| Preact + HTM app shell, two-mode dev/build | Phase 1 | Complete |
+| Identity input (name, emails, optional phone/address) | Phase 2 | Complete |
+| Save/load campaign to local JSON file | Phase 2 | Complete |
+| Broker database (169 brokers, search, filter, select) | Phase 3 | Complete |
+| Region-aware GDPR/UK-GDPR/CCPA email templates | Phase 4 | Complete |
+| Template preview sidebar with copy-to-clipboard | Phase 4 | Complete |
+| Per-broker status tracking (lifecycle states) | Phase 5 | In progress |
+| Campaign dashboard with aggregate stats | Phase 5 | In progress |
+| Demo mode for exploring the app without real data | Quick task | Complete |
 
-2. **Free consumer tools**: Mine (saymine.com, now McAfee) scans email footprint and sends deletion requests from user's inbox. JustDeleteMe provides a directory of account deletion links with difficulty ratings. California's DROP portal (January 2026) lets CA residents send one request to 500+ registered brokers. Datarequests.org generates GDPR request letters from a company database.
-
-3. **Open-source tools**: data-eraser (kjmutsch) sends GDPR/CCPA requests to 750+ brokers via Gmail. Visible Labs' databroker_remover uses Next.js + AWS SES. JustVanish (Go, still in development) has a community broker database. GDPR Helper (Python) sends access/erasure requests.
-
-ErasureKit sits in tier 3 but with a unique value proposition: **temp email protection** (no real email exposure), **zero server dependency** (fully portable), and **deadline tracking with escalation**. No existing open-source tool combines all three.
+v2.0 replaces the `mailto:` sending model (user's email client opens per broker) with fully automated relay-based sending from temporary `@erasurekit.uk` addresses.
 
 ---
 
 ## Table Stakes
 
-Features users expect. Missing = product feels incomplete or unusable.
+Features users will expect from a relay-based automated sender. Missing any of these makes the relay architecture feel broken or untrustworthy.
 
-| # | Feature | Why Expected | Complexity | Notes |
-|---|---------|--------------|------------|-------|
-| 1 | **Broker database (100+ entries)** | Every competitor has a curated list. Users need targets to send to. Without a substantial list, the tool is useless. | Med | Compile from yaelwrites BADBOOL, Vermont/CA registries, JustVanish data, data-eraser YAML. Separate `brokers.json` for community contribution. |
-| 2 | **One-click bulk sending** | Core value prop. data-eraser does this, Incogni does this. Manual per-broker emails defeat the purpose. | Med | Batch all selected brokers, send via temp email API. Rate limiting needed (mail.tm may throttle). |
-| 3 | **Legally accurate email templates** | datarequests.org, data-eraser, JustVanish all have templates. Wrong legal language = ignored requests. | Low | Cite Article 17 GDPR, Article 12(3) for response deadline, Article 17(2) for third-party notification. Include name + email identifiers minimum. |
-| 4 | **Per-broker status tracking** | Every paid service has a dashboard. Optery shows before/after screenshots. Users need to know what happened. | Med | States: not sent / sent / awaiting response / responded / completed / escalated / overdue. |
-| 5 | **30-day deadline tracking** | GDPR Article 12(3) mandates response within one month. This is the legal hammer. Users must know who is late. | Low | Calculate from send date. Auto-flag overdue brokers. EDPB's 2025 enforcement priority makes this especially relevant. |
-| 6 | **Overdue notifications** | Users need to know when to escalate. DeleteMe/Incogni handle this silently; for a self-serve tool, explicit alerts are critical. | Low | In-app notification panel. Optional browser notifications via Notification API. |
-| 7 | **Save/load progress** | Sessions persist across days/weeks. data-eraser tracks state. Without persistence, users lose all progress on browser close. | Med | File System API (Chromium) with download/upload JSON fallback. All state in one portable file. |
-| 8 | **Minimal identity input** | GDPR data minimization principle. Optery's free tier only asks name + city. Over-collecting is both a privacy and legal risk. | Low | Required: full name, email(s) to erase. Optional: phone, address. Never SSN/tax ID. |
-| 9 | **Dashboard / overview stats** | Every paid service has this. Users need a clear picture: X sent, Y responded, Z overdue. | Low | Simple counters + progress bar. No charts needed for v1. |
-| 10 | **Region-aware templates** | EU GDPR vs UK GDPR vs CCPA have different legal frameworks. datarequests.org and JustVanish both template per-regulation. | Med | GDPR (EU/EEA + UK), CCPA (California), CPA (Colorado), etc. At minimum: GDPR + CCPA. |
+| # | Feature | Why Expected | Complexity | Dependencies | Notes |
+|---|---------|--------------|------------|--------------|-------|
+| 1 | **"Send All" one-click dispatch** | Core value prop of the relay upgrade. Users selected 169 brokers -- they expect one button, not 169 clicks. Every commercial competitor (Incogni, DeleteMe) sends everything automatically. | Med | Broker selections (Phase 3), templates (Phase 4), relay worker | Dispatches all selected brokers to the relay worker. Must handle partial failures gracefully. Queue locally, POST to worker endpoint. |
+| 2 | **Temporary email address per campaign** | The relay's purpose is hiding real email. User must see their assigned `a7k9x@erasurekit.uk` address and understand brokers will respond there. | Low | Relay worker | Worker generates random 5-char prefix. Address shown prominently in UI before sending starts. |
+| 3 | **Quota-aware batch scheduling** | Resend free tier caps at 100 emails/day, 3,000/month. With 169 brokers, sending takes 2+ days. Users must know this BEFORE clicking Send All, not discover it via cryptic errors. | Med | Resend API limits, send queue | Calculate batches: ceil(selectedCount / dailyQuota). Show "Day 1: brokers 1-100, Day 2: brokers 101-169" schedule before user commits. |
+| 4 | **Batch progress visualization** | Users need to see what sent today, what sends tomorrow, what failed. Email marketing tools (HighLevel, SiteGround, Mautic) all show per-batch status with sent/pending/failed counts. | Med | Send queue, status tracker | Status per batch-day: scheduled / in-progress / complete / partial-failure. Per-broker within batch: queued / sending / sent / failed / retrying. |
+| 5 | **Campaign resume across sessions** | User closes browser after Day 1 batch. Returns tomorrow. Remaining batches must pick up automatically or with a "Resume" button. Campaign state persists in the local JSON save file. | Med | Save/load (Phase 2), send queue | Store queue state (which brokers sent, which pending, which day) in campaign JSON. On reload, detect incomplete campaign and offer resume. |
+| 6 | **Send confirmation with receipt** | After each batch completes, user needs proof: "100 emails sent at 14:32 UTC via relay-a.erasurekit.uk". Trust requires transparency. | Low | Relay worker response | Worker returns per-email status (messageId from Resend, or error). Store in campaign JSON alongside broker status. |
+| 7 | **Error handling with retry** | Emails fail: Resend rate limits, network issues, invalid broker addresses, bounce-backs. Users expect the system to retry intelligently, not silently drop. | Med | Relay worker, Resend API | Retry failed sends up to 3 times with exponential backoff. Mark as permanently failed after 3 attempts. Show clear error reason in UI. |
+| 8 | **Automatic reply monitoring** | Brokers reply to the temp address. User needs to see responses in-app without checking an external inbox. Cloudflare Email Routing can receive and route to a Worker. | High | CF Email Routing, E2E encryption, KV storage | Email Worker receives inbound, encrypts with user's public key, stores in KV. Client polls for new messages, decrypts locally. |
+| 9 | **30-day compliance deadline tracking** | Already partially built in Phase 5 (status tracking). Must integrate with relay: deadline countdown starts from actual send timestamp returned by the relay, not from when user clicked Send. | Low | Phase 5 status tracker, relay send timestamps | Use the relay's confirmed send timestamp (from Resend API response) as the deadline start, not the local click time. |
+| 10 | **Dashboard stats update** | Already partially built in Phase 5. Must reflect relay states: queued, scheduled, sending, sent, awaiting-response, responded, overdue, completed. | Low | Phase 5 dashboard | Add new states for queued/scheduled. Dashboard counters must handle multi-day campaigns where some brokers are still waiting to be sent. |
 
 ---
 
 ## Differentiators
 
-Features that set ErasureKit apart. Not expected from an open-source tool, but create real value.
+Features that elevate ErasureKit from "email sender with relay" to a genuinely novel privacy tool. Not expected, but create significant user trust and competitive advantage.
 
-| # | Feature | Value Proposition | Complexity | Notes |
-|---|---------|-------------------|------------|-------|
-| 1 | **Temporary email creation** | **The killer feature.** No other open-source tool does this. Paid services use their own email infrastructure. data-eraser requires your Gmail. ErasureKit protects your real email entirely. | Med | mail.tm or similar free API. Create account, send from it, poll inbox, delete when done. CORS is the main risk. |
-| 2 | **Automated response detection** | Mine, Incogni, and DeleteMe all categorize responses. For a self-serve tool, classifying "confirmed deletion" vs "need more info" vs "rejected" saves massive manual work. | High | Parse incoming emails for keywords/patterns. Heuristic classification: confirmation keywords, identity verification requests, rejection language, auto-replies. |
-| 3 | **Pre-filled escalation templates** | No open-source tool does this well. datarequests.org has complaint generators but not integrated with tracking. ErasureKit can auto-generate follow-up warnings citing the original request date + DPA complaint letters. | Med | Template with original send date, broker name, elapsed days. Include DPA complaint letter template with correct national DPA contact. |
-| 4 | **DPA directory with complaint links** | datarequests.org has a supervisory authority database. ErasureKit should include direct complaint form URLs for each EU/EEA DPA. Users escalating overdue brokers need one-click access to the right authority. | Low | Static data: ~30 EU/EEA DPAs + UK ICO. Include name, URL, complaint form URL, email. |
-| 5 | **Legal reference pages** | No competitor bundles GDPR Article 17 full text + plain-English explanation + identity verification pushback guide in the same tool. This makes ErasureKit an educational resource, not just a sending tool. | Low | Static content. Article 17 text, Recitals 65-66, Article 12(3) deadline, Article 12(6) on verification proportionality. |
-| 6 | **Identity verification pushback guide** | Companies frequently demand excessive ID (passport, utility bills). GDPR Article 12(6) says verification must be proportional. Most users don't know they can push back. This empowers them. | Low | Static guide: what companies can legally ask, what is disproportionate, template responses for common overreach. Cite IAPP guidance and EDPB recommendations. |
-| 7 | **Portable single-file bundle** | No server, no install, no account. Share via USB, email, or direct download. Competitors all require accounts/subscriptions. This is radical accessibility. | Low | Already in project requirements. Vite build to single HTML or small file set. |
-| 8 | **Community-editable brokers.json** | JustDeleteMe and JustVanish use community JSON/YAML. ErasureKit's separate file lets anyone contribute brokers via GitHub PR without touching app code. Schema should be well-documented. | Low | JSON schema with: name, email, region, category, notes, difficulty, privacy_page_url. |
-| 9 | **Temp email auto-cleanup** | After all brokers respond (or user decides they're done), delete the temp email account entirely. No trace left. No other tool offers this level of cleanup. | Low | API call to mail.tm to delete account. Prompt user before deletion. |
-| 10 | **Broker categorization by type** | Incogni covers 5 broker types (people search, marketing, financial, health, recruiting). Most tools treat all brokers as equal. Categorizing helps users prioritize. | Low | Categories: people-search, marketing/advertising, financial, health, background-check, recruiting, general data aggregator. |
+| # | Feature | Value Proposition | Complexity | Dependencies | Notes |
+|---|---------|-------------------|------------|--------------|-------|
+| 1 | **End-to-end encryption** | Domain owner (the developer running the relay) cannot read user emails. No other open-source erasure tool offers this. Zero-access architecture like Proton Mail, but for a relay. User's browser generates keypair via Web Crypto API; public key sent to worker; all stored responses encrypted before storage. | High | Web Crypto API (SubtleCrypto), CF KV, relay worker | Use ECDH P-256 for key agreement + AES-256-GCM for payload encryption. Browser generates keypair, stores private key in IndexedDB + exports to campaign JSON. Public key registered with relay worker. Worker encrypts inbound emails before KV storage. Only the user's browser can decrypt. |
+| 2 | **Calendar UI for batch schedule** | Most tools show a flat progress bar. ErasureKit shows a mini calendar grid: "Mon: 100 brokers (sent), Tue: 69 brokers (scheduled), Wed: reserve day". Gantt-style timeline borrowed from project management (Asana, Monday.com). Visual and intuitive. | Med | Batch scheduler, date-fns | Simple month-grid component. Each day cell shows: count of brokers, status color (green=sent, blue=scheduled, gray=empty). Click day to see broker list for that batch. Not a full calendar component -- just a styled grid. |
+| 3 | **Relay health monitoring** | User sees live relay status: "erasurekit.uk: healthy, 73/100 daily quota used". If relay is down or quota exhausted, user knows immediately. Builds trust through transparency. | Low | Relay worker health endpoint | Worker exposes `/health` endpoint returning: relay domain, daily sends remaining, monthly sends remaining, uptime. Client polls every 60s during active campaign. |
+| 4 | **Contributor relay registry** | Scale beyond one domain. Contributors donate $2/year domains (e.g., `erasure-helper.uk`), each adding 3,000 emails/month. Registry distributes load across available relays. No competitor has community-powered infrastructure scaling. | High | Multi-domain Resend config, registry API, load balancer | Registry: JSON file or KV-stored list of relay domains with their Resend API keys, current quota usage, health status. Load balancer picks least-loaded relay. Contributor onboards by: buying domain, adding CF Email Routing + Resend, submitting PR to registry. |
+| 5 | **Contributor donation/onboarding flow** | Clear, welcoming flow for contributors to add relay capacity. "Donate a domain" page with step-by-step guide: buy domain, configure Cloudflare, add Resend, submit PR. Shows community impact: "12 relays serving 36,000 emails/month". | Med | GitHub workflow, documentation | Not a payment processing flow -- contributor buys their own domain independently. The "donation" is the domain + $5.30/year cost. Onboarding page is instructional content with verification checklist. |
+| 6 | **Privacy transparency page** | Full architecture explanation: "How ErasureKit protects your privacy" with diagrams showing data flow, encryption points, what the relay sees vs. cannot see. Progressive disclosure: simple version for normal users, technical deep-dive for curious ones. Mozilla Firefox, Signal, and Proton Mail all use this pattern to build trust. | Low | Static content | Three layers: (1) TL;DR -- "Your real email is never shared. Broker responses are encrypted." (2) How it works -- data flow diagram with numbered steps. (3) Technical details -- algorithms, key management, what's stored where, threat model. Link to open-source code. |
+| 7 | **Automatic response classification** | Parse broker replies: "confirmed deletion" vs "need more info" vs "rejected" vs "auto-reply". Saves users from reading 169 emails. Use keyword/pattern matching -- no AI needed. | Med | Reply monitoring, response parser | Heuristic classifier: scan subject + body for patterns. "completed" / "deleted" / "removed" -> confirmed. "verify" / "ID" / "proof" -> needs_verification. "unable" / "cannot" / "denied" -> rejected. "out of office" / "automatic reply" -> auto_reply. Store classification in campaign JSON. |
+| 8 | **Relay usage transparency** | Show users exactly how the relay infrastructure works: "Your email was sent from relay-a.erasurekit.uk via Resend (eu-west-1). The relay cannot read your email because [E2E encryption explanation]." Per-email transparency, not just a generic about page. | Low | Send receipt data | Each sent email gets a transparency card: relay domain used, Resend region, encryption status, relay operator (if contributed domain). Accessible from the broker detail view. |
 
 ---
 
 ## Anti-Features
 
-Features to explicitly NOT build. These are traps that would compromise the project's values or add unjustified complexity.
+Features to explicitly NOT build for v2.0. These are tempting but would compromise the project's values, add unjustified complexity, or exceed free-tier constraints.
 
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| **User accounts / authentication** | Defeats the privacy-first, zero-tracking philosophy. Creates a server dependency. Paid services need accounts for billing; ErasureKit has no billing. | All state in local file. No server, no login, no tracking. |
-| **Cloud storage / syncing** | Creates a server to maintain, a database to protect, and a target for breaches. Contradicts "portable" design. | File System API for local save/load. Download/upload JSON as universal fallback. |
-| **Automated DPA complaint filing** | Filing complaints involves legal processes that vary by country. Auto-filing could create legal liability and might submit invalid complaints. | Generate complete complaint templates with correct DPA details. User reviews and files manually. |
-| **Sending from user's real email** | The entire value proposition is protecting the user's real identity. data-eraser requires Gmail; ErasureKit should never expose the real address. | Always use temp email. If temp email API is down, show error rather than falling back to real email. |
-| **Subscription / recurring billing** | Monetization pressure leads to feature-gating, dark patterns, and data retention for billing. Free and open-source is the point. | 100% free. Accept donations via GitHub Sponsors or similar if desired. |
-| **Browser extension** | Adds distribution complexity, store review processes, and platform-specific code. JustDeleteMe has one; it adds minimal value over the web app. | Single portable web app. Bookmark it. |
-| **Dark web monitoring** | Feature creep into security suite territory (Aura, Privacy Bee). Requires paid APIs, scanning infrastructure, and creates false sense of security. | Stay focused on GDPR erasure. Link to external dark web monitoring services in resources page if helpful. |
-| **Identity theft insurance** | Aura bundles $1M insurance. This is a financial product requiring licensing and partnerships. Completely out of scope. | Not applicable to an open-source tool. |
-| **Automated form-filling / browser automation** | Some brokers require web form submissions rather than email. Puppeteer/Playwright automation is fragile, breaks constantly, and requires a runtime. | For form-only brokers, provide direct link to the opt-out form with instructions. Track as "manual action required." |
-| **VPN / antivirus bundling** | Feature creep. Aura and Privacy Bee bundle these. Irrelevant to GDPR erasure. | Stay laser-focused on erasure requests. |
-| **Multi-language i18n (v1)** | Slows initial release. Community can add translations later if the architecture supports it. | English only for v1. Use i18n-ready string patterns so translations can be added without code changes. |
-| **Recurring removal cycles** | Incogni re-sends every 60-90 days. This requires persistent infrastructure (server, scheduler, always-on email). Incompatible with portable design. | Single-run tool. Users can re-run manually months later. Document that data reappears and periodic re-runs are recommended. |
-| **Search engine result removal** | Optery Ultimate includes Google/Bing outdated content removal. This is a different workflow (web forms, not email) and fragile. | Out of scope. Link to Google's removal tool and Bing's content removal page in the legal resources. |
-| **People-search site scanning** | Optery and DeleteMe scan people-search sites to find your records before requesting removal. This requires web scraping infrastructure, CAPTCHA solving, and constant maintenance. | Assume all brokers in the database may have data. Send to all selected. No pre-scanning. |
+| **Real-time WebSocket push for responses** | Adds persistent connection complexity. CF Workers free tier has no WebSocket support. KV polling is simpler and sufficient -- broker responses come over days, not seconds. | Poll relay health endpoint every 60s during active sessions. Check for new replies every 5 minutes. Show "last checked: 2 min ago" timestamp. |
+| **User-managed relay infrastructure** | Asking every user to set up their own Cloudflare Worker + Resend + domain is a non-starter. The whole point is one-click simplicity. Self-hosting option can exist for power users, but must not be required. | Default: use project-managed relay. Power users: document self-hosting as an advanced option in a separate guide. |
+| **Payment processing for contributor domains** | ErasureKit should not handle money. No Stripe integration, no payment forms. Contributors buy their own domains -- the cost ($2-5/year) is trivially small. | "Donate a domain" guide with instructions. Link to Cloudflare Registrar. No money flows through ErasureKit. |
+| **Guaranteed email delivery SLA** | Free-tier Resend has no SLA. New domains face deliverability challenges (30% penalty vs mature domains). Making promises about delivery rates creates liability. | Be transparent: "Emails are sent on a best-effort basis using industry-standard SPF/DKIM/DMARC authentication. Some brokers may filter or delay emails from new domains." Show delivery status per broker. |
+| **Broker auto-discovery / web scraping** | Automatically finding new brokers via web scraping is fragile, legally uncertain, and a maintenance burden. | Community-maintained `brokers.json` via GitHub PRs. Static, versioned, reviewed by humans. |
+| **Mobile push notifications** | Requires service worker registration, push API setup, and a notification server. Overkill for a tool that runs for a few days then is done. | In-app notification bell (already built in v1.0). Browser Notification API for background tab alerts. |
+| **Email threading / conversation view** | Building a full email client UI for broker response threads is scope creep. Users need to read responses, not manage an inbox. | Show latest reply per broker as a single card. If broker sends multiple replies, show them in chronological list. No threading, no reply drafting. |
+| **Automated follow-up sending via relay** | Auto-sending escalation emails to DPAs or overdue brokers is legally sensitive. The user must review and decide. | Generate pre-filled escalation templates (Phase 8). User reviews, then clicks "Send via relay" for each escalation individually. No bulk auto-escalation. |
+| **Multi-user / shared campaigns** | No user accounts means no multi-user. Sharing campaign files could expose personal data. | Single-user, single-campaign model. Each campaign JSON file is one person's erasure campaign. |
+| **Custom email templates via relay** | Allowing users to send arbitrary email content through the relay creates abuse potential (spam, phishing). | Relay only sends ErasureKit-generated GDPR templates. Worker validates template hash/structure before sending. |
 
 ---
 
-## Feature Dependencies
+## Feature Dependencies (v2.0 Specific)
 
 ```
-Broker Database ─────────────────────────┐
-                                          ├──> One-Click Bulk Sending ──> Per-Broker Status Tracking
-Temp Email Creation ─────────────────────┘                                       │
-                                                                                  ├──> 30-Day Deadline Tracking
-Email Templates (region-aware) ──> One-Click Bulk Sending                        │
-                                                                                  ├──> Overdue Notifications
-Minimal Identity Input ──> Email Templates                                       │
-                                                                                  ├──> Automated Response Detection
-Save/Load Progress ──> Per-Broker Status Tracking                                │
-                                                                                  └──> Pre-filled Escalation Templates ──> DPA Directory
-Dashboard ──> Per-Broker Status Tracking
+[EXISTING: Identity + Brokers + Templates]
+          |
+          v
+Temporary Email Address Generation (relay assigns @erasurekit.uk)
+          |
+          v
+E2E Encryption Keypair (browser generates, public key sent to relay)
+          |
+          v
+"Send All" Dispatch ──> Quota-Aware Batch Scheduler
+          |                        |
+          v                        v
+Send Queue (local) ──> Calendar UI (batch visualization)
+          |
+          v
+Relay Worker Sends (Resend API) ──> Send Receipts
+          |                                |
+          v                                v
+Batch Progress Tracking ──> Dashboard Stats Update
+          |
+          v
+Reply Monitoring (CF Email Routing ──> Worker ──> KV)
+          |
+          v
+Response Decryption (browser, private key)
+          |
+          v
+Automatic Response Classification
+          |
+          v
+30-Day Deadline Tracking (from actual send timestamp)
+          |
+          v
+[FUTURE: Phase 8 Escalation Templates via relay]
 
-Temp Email Auto-Cleanup ──> Temp Email Creation + Per-Broker Status Tracking (all complete)
-
-Legal Reference Pages ──> (standalone, no dependencies)
-Identity Verification Guide ──> (standalone, no dependencies)
-DPA Directory ──> (standalone, no dependencies)
-Broker Categorization ──> Broker Database
-Community brokers.json ──> Broker Database
+PARALLEL (no dependencies on send flow):
+  Privacy Transparency Page ──> (standalone static content)
+  Relay Health Monitoring ──> (relay /health endpoint)
+  Contributor Donation Flow ──> Relay Registry ──> Load Balancer
 ```
 
-### Critical Path
+### Critical Path (Minimum Viable Relay)
 
-The minimum viable flow requires this chain:
-1. **Broker Database** (data foundation)
-2. **Minimal Identity Input** (user provides info)
-3. **Email Templates** (generate request text)
-4. **Temp Email Creation** (create sending address)
-5. **One-Click Bulk Sending** (send all requests)
-6. **Per-Broker Status Tracking** (record what was sent)
-7. **Save/Load Progress** (persist across sessions)
+The absolute minimum to ship v2.0:
 
-Everything else builds on top of this chain.
+1. **Cloudflare Worker relay** -- send emails via Resend API
+2. **Temp email assignment** -- random `@erasurekit.uk` address per campaign
+3. **"Send All" dispatch** -- POST selected brokers to relay
+4. **Batch scheduling** -- split across days respecting 100/day Resend limit
+5. **Send receipt + status update** -- confirm what was sent
+6. **Campaign resume** -- persist queue state in local JSON
 
----
+Everything else (E2E encryption, reply monitoring, calendar UI, contributor registry, privacy page) builds on this foundation.
 
-## MVP Recommendation
+### Complexity Budget
 
-### Must ship (Phase 1):
-
-1. **Broker database** with 100+ entries compiled from open-source lists (table stakes)
-2. **Temp email creation** via mail.tm API (the differentiator)
-3. **One-click bulk sending** with legally accurate GDPR templates (table stakes + core value)
-4. **Per-broker status tracking** with deadline calculation (table stakes)
-5. **Save/load progress** to local JSON file (table stakes)
-6. **Dashboard overview** showing sent/responded/overdue counts (table stakes)
-
-### Should ship (Phase 2):
-
-7. **Automated response detection** via temp inbox polling (differentiator)
-8. **Overdue broker notifications** (table stakes)
-9. **30-day deadline tracking with visual indicators** (table stakes)
-10. **Region-aware templates** (GDPR + CCPA at minimum) (table stakes)
-
-### Defer to Phase 3+:
-
-11. **Escalation templates** for overdue brokers (differentiator)
-12. **DPA directory with complaint links** (differentiator)
-13. **Legal reference pages** (differentiator)
-14. **Identity verification pushback guide** (differentiator)
-15. **Broker categorization** (differentiator)
-16. **Temp email auto-cleanup** (differentiator)
-
-### Rationale for ordering:
-
-- Phase 1 delivers the end-to-end flow: enter info, send requests, track progress. This is the minimum that makes the tool useful.
-- Phase 2 adds the monitoring loop: poll for responses, detect what happened, alert on overdue. This closes the "set and forget" gap.
-- Phase 3 adds the escalation and education layer: what to do when brokers ignore you, legal knowledge, and cleanup.
+| Feature Group | Estimated Complexity | Risk Level |
+|---------------|---------------------|------------|
+| Relay worker (send via Resend) | Medium | Low -- well-documented, official tutorials exist |
+| Batch scheduler + queue | Medium | Low -- arithmetic + state management |
+| Calendar/progress UI | Medium | Low -- UI component, no external dependencies |
+| E2E encryption (Web Crypto) | High | Medium -- crypto is easy to get wrong, key management is the hard part |
+| Reply monitoring (CF Email Routing) | High | Medium -- inbound email processing, parsing, storage |
+| Response classification | Medium | Low -- keyword heuristics, no ML needed |
+| Contributor relay registry | High | Medium -- multi-domain coordination, load balancing, trust model |
+| Privacy transparency page | Low | Very Low -- static content |
+| Contributor onboarding | Medium | Low -- documentation + verification |
 
 ---
 
-## Competitive Positioning Matrix
+## MVP Recommendation for v2.0
 
-| Capability | ErasureKit | data-eraser | JustDeleteMe | datarequests.org | Incogni | DeleteMe |
-|-----------|-----------|-------------|--------------|------------------|---------|----------|
-| **Price** | Free | Free | Free | Free | $96/yr | $129/yr |
-| **Real email protected** | Yes (temp) | No (Gmail) | N/A | No (user sends) | Yes (proxy) | Yes (proxy) |
-| **Broker coverage** | 100+ (v1) | 750+ | 500+ links | Company DB | 420+ | 750+ |
-| **Auto-send emails** | Yes | Yes | No (links only) | No (generates letter) | Yes | Yes |
-| **Response tracking** | Yes | Partial | No | No | Yes | Yes |
-| **Deadline tracking** | Yes | No | No | No | Internal | Internal |
-| **Escalation templates** | Yes | No | No | Yes (complaint gen) | Internal | Internal |
-| **Portable / no server** | Yes | No (needs Gmail) | Yes (static site) | Yes (static site) | No (SaaS) | No (SaaS) |
-| **Open source** | Yes | Yes | Yes | Yes | No | No |
-| **Recurring removals** | Manual re-run | Manual re-run | N/A | N/A | Auto (60-90 days) | Auto (quarterly) |
+### Must ship (Core Relay):
 
-ErasureKit's unique position: **the only tool that auto-sends erasure requests while protecting the user's real email, tracking deadlines, and running entirely client-side with no server or account required.**
+1. **Cloudflare Worker relay** with Resend integration (table stakes -- the entire milestone depends on this)
+2. **"Send All" one-click dispatch** with batch scheduling across days (table stakes)
+3. **Batch progress visualization** showing sent/pending/failed per day (table stakes)
+4. **Campaign resume** -- queued emails persist and pick up on reload (table stakes)
+5. **Send receipts** with relay transparency (table stakes)
+6. **Error handling with retry** (table stakes)
+7. **30-day deadline from actual send timestamp** (table stakes -- integrates with existing Phase 5)
+
+### Should ship (Trust Layer):
+
+8. **E2E encryption** -- browser keypair, relay cannot read responses (differentiator -- core privacy promise)
+9. **Reply monitoring** via Cloudflare Email Routing (differentiator -- closes the feedback loop)
+10. **Privacy transparency page** (differentiator -- builds trust, low effort)
+11. **Relay health monitoring** (differentiator -- low effort, high trust impact)
+
+### Defer to v2.1+:
+
+12. **Calendar UI** for batch schedule (differentiator -- nice but a simple list/progress bar works for v2.0)
+13. **Automatic response classification** (differentiator -- can be added after reply monitoring works)
+14. **Contributor relay registry** (differentiator -- premature until primary relay is proven in production)
+15. **Contributor donation/onboarding flow** (differentiator -- depends on registry)
+
+### Rationale:
+
+- **Core Relay** delivers the fundamental upgrade: automated sending that works. Without this, nothing else matters.
+- **Trust Layer** is what makes users comfortable sending personal data through someone else's infrastructure. E2E encryption is not optional for a privacy tool -- it IS the privacy tool.
+- **Deferred features** are genuine enhancements but can ship incrementally. The calendar UI is cosmetic polish over a working progress tracker. The contributor registry requires production experience to design correctly.
+
+---
+
+## Competitive Positioning Update (v2.0)
+
+| Capability | ErasureKit v1.0 | ErasureKit v2.0 | data-eraser | Incogni | DeleteMe |
+|-----------|----------------|----------------|-------------|---------|----------|
+| **Automated sending** | No (mailto:) | Yes (relay) | Yes (Gmail) | Yes | Yes |
+| **Real email protected** | No | Yes (temp @erasurekit.uk) | No (your Gmail) | Yes (proxy) | Yes (proxy) |
+| **E2E encrypted responses** | N/A | Yes (Web Crypto) | No | Unknown | Unknown |
+| **Domain owner can't read** | N/A | Yes (zero-access) | N/A (your account) | Unknown | Unknown |
+| **Open source relay** | N/A | Yes | No | No | No |
+| **Community-scalable infra** | N/A | Yes (donated domains) | No | No | No |
+| **Batch schedule visibility** | N/A | Yes (calendar/progress) | No | No | No |
+| **Free** | Yes | Yes | Yes | $96/yr | $129/yr |
+| **Portable / no server needed** | Yes | Yes (relay is optional infra) | No (needs Gmail) | No (SaaS) | No (SaaS) |
+
+v2.0 puts ErasureKit in a unique position: the only tool with **automated sending + E2E encrypted relay + zero-access architecture + community-scalable infrastructure + completely free and open source**.
+
+---
+
+## Infrastructure Constraints Affecting Features
+
+These constraints directly shape what features are feasible and how they must be designed.
+
+| Constraint | Limit | Impact on Features |
+|------------|-------|--------------------|
+| Resend free tier: 100 emails/day | Hard daily cap | Batch scheduling is mandatory, not optional. 169 brokers = 2 days minimum. |
+| Resend free tier: 3,000 emails/month | Monthly cap | At full broker list, supports ~17 full campaigns/month on one domain. Contributor relay registry becomes important at scale. |
+| Resend API: 5 req/sec | Rate limit | Batch API (100 emails/call) helps. No risk of hitting this with daily cap of 100 total. |
+| Resend batch API: 100 per call | Per-request limit | Convenient: one API call per day's batch. Aligns perfectly with daily quota. |
+| Cloudflare KV free: 100K reads/day | Generous for reads | Reply polling every 5 min = ~288 reads/day per user. Supports hundreds of concurrent users. |
+| Cloudflare KV free: 1K writes/day | Tight for writes | Each inbound email = 1 write. 1,000 broker replies/day across all users is the limit. Fine for early scale. |
+| Cloudflare KV free: 1 GB storage | Storage cap | Encrypted email bodies are small (1-5 KB each). 1 GB = ~200K-1M stored replies. More than sufficient. |
+| Cloudflare Workers free: 100K req/day | Request cap | Each send = 1 request. Each health check = 1 request. Each reply poll = 1 request. 100K is generous. |
+| Cloudflare Workers free: 10ms CPU/req | CPU time limit | Email send via fetch() is I/O-bound, not CPU-bound. 10ms CPU is sufficient. Encryption adds ~1ms CPU. |
+| New domain deliverability penalty | ~30% lower inbox rate vs mature domains | Domain warm-up period needed. Start with small test sends before "Send All" goes live. Document expected deliverability. |
+| Resend bounce rate: under 4% | Account health requirement | Broker emails are verified addresses (from curated database). Bounce rate should be low. Monitor and remove bouncing brokers. |
 
 ---
 
 ## Sources
 
-- [DeleteMe Review - Security.org](https://www.security.org/data-removal/deleteme/)
-- [Incogni Review - Security.org](https://www.security.org/data-removal/incogni/)
-- [Optery Review - Security.org](https://www.security.org/data-removal/optery/)
-- [Aura Data Removal Service](https://www.aura.com/data-removal-service)
-- [Privacy Bee Review - allaboutcookies.org](https://allaboutcookies.org/privacy-bee-review)
-- [Mine (saymine.com)](https://www.saymine.com/)
-- [JustDeleteMe](https://justdeleteme.xyz/)
-- [JustDeleteMe GitHub](https://github.com/justdeleteme/justdelete.me)
-- [Redact.dev Features](https://redact.dev/features)
-- [datarequests.org](https://www.datarequests.org/)
-- [datarequests.org Open Source](https://www.datarequests.org/open-source/)
-- [data-eraser (kjmutsch) GitHub](https://github.com/kjmutsch/data-eraser)
-- [JustVanish GitHub](https://github.com/AnalogJ/justvanish)
-- [Visible Labs databroker_remover GitHub](https://github.com/visible-cx/databroker_remover)
-- [Big Ass Data Broker Opt-Out List (BADBOOL)](https://github.com/yaelwrites/Big-Ass-Data-Broker-Opt-Out-List)
-- [California DROP Portal](https://privacy.ca.gov/drop/about-drop-and-the-delete-act/)
-- [GDPR Article 17 full text](https://gdpr-info.eu/art-17-gdpr/)
-- [EDPB 2025 Erasure Enforcement Focus](https://www.compliancepoint.com/privacy/gdpr-right-to-erasure-an-enforcement-priority-in-2025/)
-- [GDPR Identity Verification - IAPP](https://iapp.org/news/a/how-to-verify-identity-of-data-subjects-for-dsars-under-the-gdpr)
-- [datarequests.org Sample Erasure Letter](https://www.datarequests.org/blog/sample-letter-gdpr-erasure-request/)
-- [Best Data Removal Services 2026 - Security.org](https://www.security.org/data-removal/best/)
-- [Incogni vs Optery - Surfshark](https://surfshark.com/blog/incogni-vs-optery)
-- [Aura Review - CyberInsider](https://cyberinsider.com/data-removal/aura-data-removal-review/)
+### Relay Architecture
+- [Cloudflare Workers + Resend tutorial](https://developers.cloudflare.com/workers/tutorials/send-emails-with-resend/)
+- [Resend: Send with Cloudflare Workers](https://resend.com/docs/send-with-cloudflare-workers)
+- [Cloudflare Queues: batching, retries, delays](https://developers.cloudflare.com/queues/configuration/batching-retries/)
+- [Cloudflare Email Service private beta (2025)](https://blog.cloudflare.com/email-service/)
+
+### Rate Limits and Quotas
+- [Resend account quotas and limits](https://resend.com/docs/knowledge-base/account-quotas-and-limits)
+- [Resend API rate limit changelog](https://resend.com/changelog/api-rate-limit)
+- [Resend pricing](https://resend.com/pricing)
+- [Cloudflare KV pricing](https://developers.cloudflare.com/kv/platform/pricing/)
+- [Cloudflare KV limits](https://developers.cloudflare.com/kv/platform/limits/)
+- [Cloudflare Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/)
+
+### Email Deliverability
+- [Domain warm-up best practices 2025 (PrimeForge)](https://www.primeforge.ai/blog/best-practices-for-warming-up-domains-in-2025)
+- [Domain warm-up best practices 2025 (Salesforge)](https://www.salesforge.ai/blog/best-practices-for-domain-warm-up-in-2025)
+- [B2B email deliverability benchmarks 2025](https://thedigitalbloom.com/learn/b2b-email-deliverability-benchmarks-2025/)
+- [Google sender compliance enforcement (Valimail)](https://www.valimail.com/blog/google-email-compliance-enforcement/)
+
+### Reply Monitoring
+- [Cloudflare Email Workers](https://developers.cloudflare.com/email-routing/email-workers/)
+- [Cloudflare Email Routing overview](https://developers.cloudflare.com/email-routing/)
+- [Process incoming emails with CF Workers (dev.to)](https://dev.to/elvisans/how-to-process-incoming-emails-and-trigger-webhooks-in-app-actions-and-more-using-cloudflare-5d07)
+
+### E2E Encryption
+- [SubtleCrypto generateKey (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/generateKey)
+- [Web Crypto API keypair generation (dev.to)](https://dev.to/jrgould/use-the-web-crypto-api-to-generate-a-public-private-key-pair-for-end-to-end-asymmetric-cryptography-on-the-web-2mpe)
+- [Mailfence browser-based encryption](https://mailfence.com)
+- [Proton Mail zero-access architecture](https://proton.me/)
+
+### Batch UX Patterns
+- [Calendar UI examples and UX tips (Eleken)](https://www.eleken.co/blog-posts/calendar-ui)
+- [Batch scheduling patterns (OneUptime)](https://oneuptime.com/blog/post/2026-01-30-batch-processing-scheduling-patterns/view)
+- [HighLevel: batch schedule email campaigns](https://help.gohighlevel.com/support/solutions/articles/48001215379-how-to-schedule-batch-email-campaign-s-)
+- [HighLevel: email campaign statuses](https://help.gohighlevel.com/support/solutions/articles/155000006659-understanding-email-campaign-statuses)
+
+### Privacy UX
+- [Privacy-First UX and Design Systems (Medium)](https://medium.com/@harsh.mudgal_27075/privacy-first-ux-design-systems-for-trust-9f727f69a050)
+- [Designing Trust: Security and Privacy as Core UX Principles (Medium)](https://medium.com/design-bootcamp/designing-trust-security-and-privacy-as-core-ux-principles-71834eca216c)
+- [Privacy by Design in AI UX (DeveloperUX)](https://developerux.com/2025/04/09/privacy-by-design-in-ai-ux/)
+
+### Contributor/Donation Patterns
+- [Open Source Collective](https://oscollective.org/)
+- [Funding open source projects guide (Sealos)](https://sealos.io/blog/funding-open-source/)
+- [Open source funding platforms (ItsFOSS)](https://itsfoss.com/open-source-funding-platforms/)
+
+### Competitor Landscape
+- [Consumer Reports automated deletion tool](https://innovation.consumerreports.org/new-open-source-project-automates-data-deletion-requests-by-email/)
+- [Resend pricing guide 2025 (Flexprice)](https://flexprice.io/blog/detailed-resend-pricing-guide)
+- [Mastering email rate limits with Resend (Dale Nguyen)](https://dalenguyen.me/blog/2025-09-07-mastering-email-rate-limits-resend-api-cloud-run-debugging)
