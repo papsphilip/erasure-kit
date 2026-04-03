@@ -1,0 +1,16 @@
+{
+  "name": "erasurekit-relay",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "wrangler": "^4.14.0",
+    "@cloudflare/vitest-pool-workers": "^0.8.0",
+    "vitest": "^3.1.1"
+  }
+}
