@@ -3,3 +3,8 @@ dist/
 .vite/
 *.local
 package-lock.json
+
+# Cloudflare Worker
+.dev.vars
+.wrangler/
+worker/node_modules/
