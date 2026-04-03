@@ -59,8 +59,8 @@ Requirements for the relay-based sending system. Each maps to roadmap phases 5-1
 
 ### End-to-End Encryption
 
-- [ ] **E2EE-01**: User's browser generates a Web Crypto API key pair; only the browser holds the private decryption key
-- [ ] **E2EE-02**: All email content (template body, identity data, broker replies) is encrypted before leaving the browser -- the Worker and domain owner cannot decrypt it
+- [x] **E2EE-01**: User's browser generates a Web Crypto API key pair; only the browser holds the private decryption key
+- [x] **E2EE-02**: All email content (template body, identity data, broker replies) is encrypted before leaving the browser -- the Worker and domain owner cannot decrypt it
 
 ### Reply Monitoring
 
@@ -173,8 +173,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RELAY-01 | Phase 5: Relay Infrastructure and E2E Encryption | Pending |
 | RELAY-02 | Phase 5: Relay Infrastructure and E2E Encryption | Pending |
 | RELAY-03 | Phase 5: Relay Infrastructure and E2E Encryption | Pending |
-| E2EE-01 | Phase 5: Relay Infrastructure and E2E Encryption | Pending |
-| E2EE-02 | Phase 5: Relay Infrastructure and E2E Encryption | Pending |
+| E2EE-01 | Phase 5: Relay Infrastructure and E2E Encryption | Complete |
+| E2EE-02 | Phase 5: Relay Infrastructure and E2E Encryption | Complete |
 | RELAY-04 | Phase 6: Frontend Sending Integration | Pending |
 | RELAY-05 | Phase 6: Frontend Sending Integration | Pending |
 | STAT-01 | Phase 6: Frontend Sending Integration | Pending |

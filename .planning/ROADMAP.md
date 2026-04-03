@@ -110,10 +110,10 @@ Plans:
   3. The Worker cannot decrypt user email content -- only the user's browser holds the decryption key (Web Crypto API key pair)
   4. Calling the Worker API from a browser with a valid encrypted payload results in a real email delivered to the target broker address
   5. The Worker returns structured success/failure responses that the frontend can use to update broker status
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 Plans:
 - [ ] 05-01-PLAN.md -- Cloudflare Worker project scaffold, POST /send + DELETE /address routes, Resend API client, rate limiter, CORS, tests
-- [ ] 05-02-PLAN.md -- Browser crypto module (RSA-OAEP + AES-256-GCM hybrid encryption), campaign schema v3 with encryption field
+- [x] 05-02-PLAN.md -- Browser crypto module (RSA-OAEP + AES-256-GCM hybrid encryption), campaign schema v3 with encryption field
 - [ ] 05-03-PLAN.md -- Deployment: DNS/Resend/KV setup, wrangler deploy, live email verification
 
 ### Phase 6: Frontend Sending Integration
@@ -190,7 +190,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 2. Identity Input and Persistence | v1.0 | 3/3 | Complete | 2026-03-29 |
 | 3. Broker Database | v1.0 | 1/1 | Complete | 2026-03-29 |
 | 4. Email Templates | v1.0 | 2/2 | Complete | 2026-03-30 |
-| 5. Relay Infrastructure and E2E Encryption | v2.0 | 0/3 | Planning complete | - |
+| 5. Relay Infrastructure and E2E Encryption | v2.0 | 1/3 | In Progress|  |
 | 6. Frontend Sending Integration | v2.0 | 0/0 | Not started | - |
 | 7. Reply Monitoring and Response Classification | v2.0 | 0/0 | Not started | - |
 | 8. Quota-Aware Batching and Campaign Resume | v2.0 | 0/0 | Not started | - |
