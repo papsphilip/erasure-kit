@@ -1,92 +1,131 @@
 import { campaign } from './campaign.js';
 import { getTemplateForBroker } from './template-engine.js';
-import { markBrokerSent, getBrokerStatusValue, STATUS } from './status-tracker.js';
-import { copyToClipboard } from './clipboard.js';
+import { markBrokerSent, markBrokerFailed, getBrokerStatusValue, STATUS } from './status-tracker.js';
+import { relaySend } from './relay-client.js';
+import { encryptEmailBody } from './crypto.js';
 import { demoMode } from './demo-mode.js';
 
-// ── Constants ────────────────────────────────────────────────────────────────
+// ── Configuration ────────────────────────────────────────────────────────────
 
-/**
- * Maximum mailto: URL length before falling back to clipboard (SEND-04).
- * Most browsers limit mailto: URIs to ~2000 characters.
- */
-export const MAILTO_LIMIT = 2000;
+const RELAY_SEND_DELAY_MS = 500;
+const DEMO_MIN_DELAY_MS = 300;
+const DEMO_MAX_DELAY_MS = 700;
+const DEMO_FAILURE_RATE = 0.125; // 1 in 8
+const DEMO_RATE_LIMIT_RATE = 0.067; // ~1 in 15
+const DEMO_RATE_LIMIT_SECONDS = 4;
 
 // ── Single Broker Send ───────────────────────────────────────────────────────
 
 /**
- * Send an erasure request to a single broker via mailto: URI (SEND-01).
- * If the mailto: URL exceeds MAILTO_LIMIT, falls back to clipboard copy (SEND-04).
+ * Send an erasure request to a single broker via the relay API.
+ * Encrypts the template body with the campaign public key, then POSTs
+ * the encrypted payload to the Worker relay.
+ *
+ * In demo mode: simulates realistic delays (300-700ms), occasional failures
+ * (~1 in 8), and occasional rate limits (~1 in 15). No real API calls made.
+ *
  * @param {object} broker - Broker object { id, name, email, legalFramework, ... }
  * @param {object} [options] - { identity, customTemplates }
- * @returns {{ method: 'mailto'|'clipboard', success: boolean }}
+ * @returns {Promise<{ success: boolean, method?: string, error?: object, retryAfter?: number }>}
  */
-export function sendToBroker(broker, options = {}) {
+export async function sendToBroker(broker, options = {}) {
   const identity = options.identity || campaign.value.identity;
   const customTemplates = options.customTemplates || campaign.value.brokers.templates || {};
   const { subject, body } = getTemplateForBroker(identity, broker, customTemplates);
 
-  // Demo mode: simulate send without opening mailto: or clipboard
+  // Demo mode: simulate the full relay flow (D-12)
   if (demoMode.value) {
-    console.log(`[DEMO] Would send to ${broker.email}: ${subject}`);
+    await sleep(DEMO_MIN_DELAY_MS + Math.random() * (DEMO_MAX_DELAY_MS - DEMO_MIN_DELAY_MS));
+
+    // Simulate rate limit (~1 in 15)
+    if (Math.random() < DEMO_RATE_LIMIT_RATE) {
+      return {
+        success: false,
+        error: { code: 'RATE_LIMITED', message: 'Demo rate limit' },
+        retryAfter: DEMO_RATE_LIMIT_SECONDS,
+      };
+    }
+
+    // Simulate failure (~1 in 8)
+    if (Math.random() < DEMO_FAILURE_RATE) {
+      return {
+        success: false,
+        error: { code: 'RESEND_FAILED', message: 'Simulated delivery failure' },
+      };
+    }
+
     markBrokerSent(broker.id);
-    return { method: 'demo', success: true };
+    return { success: true, method: 'demo' };
   }
 
-  const mailtoUrl = buildMailtoUrl(broker.email, subject, body);
-
-  if (mailtoUrl.length > MAILTO_LIMIT) {
-    // Fallback to clipboard (SEND-04)
-    const fullText = `To: ${broker.email}\nSubject: ${subject}\n\n${body}`;
-    copyToClipboard(fullText);
-    markBrokerSent(broker.id);
-    return { method: 'clipboard', success: true };
+  // Real mode: encrypt and send via relay
+  if (!campaign.value.encryption?.publicKeyJwk) {
+    throw new Error('Campaign encryption keys not initialized. Start a new campaign.');
   }
 
-  // Open mailto: link (SEND-01)
-  window.open(mailtoUrl, '_self');
-  markBrokerSent(broker.id);
-  return { method: 'mailto', success: true };
-}
+  const encrypted = await encryptEmailBody(body, campaign.value.encryption.publicKeyJwk);
 
-/**
- * Build a mailto: URL with encoded subject and body.
- * @param {string} to - Recipient email
- * @param {string} subject - Email subject
- * @param {string} body - Email body text
- * @returns {string} mailto: URL
- */
-export function buildMailtoUrl(to, subject, body) {
-  return `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const tempSlug = campaign.value.tempEmail?.split('@')[0];
+  if (!tempSlug) {
+    throw new Error('Campaign has no temp email address. Start a new campaign.');
+  }
+
+  const result = await relaySend({
+    to: broker.email,
+    subject,
+    encryptedBody: encrypted.encryptedBody,
+    wrappedKey: encrypted.wrappedKey,
+    iv: encrypted.iv,
+    tempAddress: tempSlug,
+    publicKey: campaign.value.encryption.publicKeyJwk,
+  });
+
+  if (result.success) {
+    markBrokerSent(broker.id);
+    return { ...result, method: 'relay' };
+  }
+
+  // Error passthrough — caller handles RATE_LIMITED vs FAILED
+  return result;
 }
 
 // ── Batch Send ───────────────────────────────────────────────────────────────
 
 /**
- * Batch send erasure requests to multiple brokers (SEND-02).
- * Sequential sending with delay to avoid overwhelming the email client.
- * Skips brokers that have already been sent.
+ * Batch send erasure requests to multiple brokers through the relay.
+ * Sequential sending with delay, rate-limit pause with auto-retry,
+ * and failure tracking with markBrokerFailed.
  *
  * @param {Array} brokers - Array of broker objects to send to
  * @param {object} [options] - Configuration
- * @param {number} [options.delayMs=1500] - Delay between sends (ms)
- * @param {function} [options.onProgress] - Callback: ({ current, total, broker, method, failed })
- * @param {function} [options.onComplete] - Callback: ({ sent, failed, clipboard, total })
+ * @param {number} [options.delayMs=500] - Delay between sends (ms)
+ * @param {function} [options.onProgress] - Callback: ({ current, total, broker, sent, failed })
+ * @param {function} [options.onComplete] - Callback: ({ sent, failed, total })
+ * @param {function} [options.onRateLimited] - Callback: ({ seconds, broker })
  * @param {AbortSignal} [options.signal] - AbortSignal to cancel batch
- * @returns {Promise<{ sent: number, failed: number, clipboard: number }>}
+ * @returns {Promise<{ sent: number, failed: number, total: number }>}
  */
 export async function batchSend(brokers, options = {}) {
-  const { delayMs = 1500, onProgress, onComplete, signal: abortSignal } = options;
+  const {
+    delayMs = RELAY_SEND_DELAY_MS,
+    onProgress,
+    onComplete,
+    onRateLimited,
+    signal: abortSignal,
+  } = options;
 
-  // Filter to only unsent selected brokers
+  // Filter to unsent brokers: SELECTED, NOT_SELECTED, or FAILED (retry-all)
   const toSend = brokers.filter((b) => {
     const status = getBrokerStatusValue(b.id);
-    return status === STATUS.SELECTED || status === STATUS.NOT_SELECTED;
+    return (
+      status === STATUS.SELECTED ||
+      status === STATUS.NOT_SELECTED ||
+      status === STATUS.FAILED
+    );
   });
 
   let sent = 0;
   let failed = 0;
-  let clipboard = 0;
 
   for (let i = 0; i < toSend.length; i++) {
     // Check for abort
@@ -95,27 +134,27 @@ export async function batchSend(brokers, options = {}) {
     }
 
     const broker = toSend[i];
+    const result = await sendToBroker(broker);
 
-    try {
-      const result = sendToBroker(broker);
-      if (result.method === 'clipboard') {
-        clipboard++;
-      }
-      sent++;
-    } catch (err) {
-      console.error(`Failed to send to ${broker.name}:`, err);
+    // RATE_LIMITED handling (D-05): pause and retry same broker
+    if (!result.success && result.error?.code === 'RATE_LIMITED') {
+      const retryAfter = result.retryAfter || 60;
+      onRateLimited?.({ seconds: retryAfter, broker });
+      await sleep(retryAfter * 1000, abortSignal);
+      i--; // retry same broker
+      continue;
+    }
+
+    // FAILURE handling (RESEND_FAILED or INVALID_PAYLOAD)
+    if (!result.success) {
+      markBrokerFailed(broker.id, result.error.code, result.error.message);
       failed++;
+    } else {
+      // SUCCESS
+      sent++;
     }
 
-    if (onProgress) {
-      onProgress({
-        current: i + 1,
-        total: toSend.length,
-        broker: broker,
-        method: clipboard > 0 ? 'clipboard' : 'mailto',
-        failed,
-      });
-    }
+    onProgress?.({ current: i + 1, total: toSend.length, broker, sent, failed });
 
     // Delay between sends (except for last one)
     if (i < toSend.length - 1 && delayMs > 0) {
@@ -123,17 +162,16 @@ export async function batchSend(brokers, options = {}) {
     }
   }
 
-  const result = { sent, failed, clipboard, total: toSend.length };
-
-  if (onComplete) {
-    onComplete(result);
-  }
-
-  return result;
+  const summary = { sent, failed, total: toSend.length };
+  onComplete?.(summary);
+  return summary;
 }
+
+// ── Unsent Count ─────────────────────────────────────────────────────────────
 
 /**
  * Get the count of unsent brokers from the selected list.
+ * Includes SELECTED, NOT_SELECTED, and FAILED (can be retried).
  * @returns {number}
  */
 export function getUnsentCount() {
@@ -141,7 +179,12 @@ export function getUnsentCount() {
   const statuses = campaign.value.statuses || {};
   return selected.filter((id) => {
     const entry = statuses[id];
-    return !entry || entry.status === STATUS.SELECTED || entry.status === STATUS.NOT_SELECTED;
+    if (!entry) return true; // no status entry = unsent
+    return (
+      entry.status === STATUS.SELECTED ||
+      entry.status === STATUS.NOT_SELECTED ||
+      entry.status === STATUS.FAILED
+    );
   }).length;
 }
 
@@ -151,10 +194,14 @@ function sleep(ms, abortSignal) {
   return new Promise((resolve) => {
     const timer = setTimeout(resolve, ms);
     if (abortSignal) {
-      abortSignal.addEventListener('abort', () => {
-        clearTimeout(timer);
-        resolve();
-      }, { once: true });
+      abortSignal.addEventListener(
+        'abort',
+        () => {
+          clearTimeout(timer);
+          resolve();
+        },
+        { once: true }
+      );
     }
   });
 }
