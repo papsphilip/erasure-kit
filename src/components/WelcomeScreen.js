@@ -6,6 +6,9 @@ import { hasExistingCampaign, campaign, startNewCampaign, loadCampaignFromFile }
 /** Error message for failed file load on welcome screen */
 const welcomeLoadError = signal(null);
 
+/** Loading state for the "Start New" / "Get Started" button (D-07) */
+const startingNew = signal(false);
+
 /**
  * Handle "Load from file" on welcome screen (D-21).
  * On success, navigates to identity page. On error, shows inline message.
@@ -73,9 +76,14 @@ export function WelcomeScreen() {
       <!-- CTA section: conditional rendering based on returning user status -->
       ${isReturning ? html`
         <!-- Returning user flow (D-19, D-20, D-21) -->
-        <p class="text-sm text-[var(--ek-text-muted)] text-center mb-4">
+        <p class="text-sm text-[var(--ek-text-muted)] text-center mb-2">
           You have an unsaved campaign with ${emailCount} email${emailCount !== 1 ? 's' : ''} to erase
         </p>
+        ${campaign.value.tempEmail && html`
+          <p class="text-sm text-[var(--ek-text-muted)] text-center mb-4">
+            Sending from: <span class="font-mono text-[var(--ek-primary)] font-medium">${campaign.value.tempEmail}</span>
+          </p>
+        `}
 
         <div class="flex flex-col sm:flex-row justify-center gap-3 mb-4">
           <button
@@ -85,12 +93,22 @@ export function WelcomeScreen() {
             Resume Campaign
           </button>
           <button
-            onClick=${() => { startNewCampaign(); navigateTo('identity'); }}
-            class="h-12 px-8 bg-transparent border border-[var(--ek-border)] text-[var(--ek-text)] text-base font-semibold rounded-lg hover:bg-[var(--ek-surface-alt)] transition-all duration-150 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ek-surface)] outline-none"
+            onClick=${async () => { startingNew.value = true; await startNewCampaign(); startingNew.value = false; navigateTo('identity'); }}
+            disabled=${startingNew.value}
+            class="h-12 px-8 bg-transparent border border-[var(--ek-border)] text-[var(--ek-text)] text-base font-semibold rounded-lg hover:bg-[var(--ek-surface-alt)] transition-all duration-150 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ek-surface)] outline-none ${startingNew.value ? 'opacity-60 cursor-wait' : ''}"
           >
-            Start New
+            ${startingNew.value ? 'Creating campaign...' : 'Start New'}
           </button>
         </div>
+
+        ${/* D-07, D-08: Temp address display for returning users */''}
+        ${campaign.value.tempEmail && html`
+          <div class="rounded-xl bg-[var(--ek-surface-alt)] border border-[var(--ek-border)] p-4 mt-2 mb-4 text-center">
+            <p class="text-xs text-[var(--ek-text-muted)] mb-1">Your requests will be sent from</p>
+            <p class="text-base font-mono font-semibold text-[var(--ek-primary)]">${campaign.value.tempEmail}</p>
+            <p class="text-xs text-[var(--ek-text-muted)] mt-1">Your real email is never shared with brokers</p>
+          </div>
+        `}
 
         <div class="text-center">
           <button
@@ -108,10 +126,11 @@ export function WelcomeScreen() {
         <!-- New user flow -->
         <div class="flex justify-center mb-8">
           <button
-            onClick=${() => navigateTo('identity')}
-            class="w-full sm:w-auto h-12 px-8 bg-[var(--ek-primary)] text-white text-base font-semibold rounded-lg hover:brightness-90 active:brightness-85 transition-all duration-150 hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ek-surface)] outline-none"
+            onClick=${async () => { startingNew.value = true; await startNewCampaign(); startingNew.value = false; navigateTo('identity'); }}
+            disabled=${startingNew.value}
+            class="w-full sm:w-auto h-12 px-8 bg-[var(--ek-primary)] text-white text-base font-semibold rounded-lg hover:brightness-90 active:brightness-85 transition-all duration-150 hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ek-surface)] outline-none ${startingNew.value ? 'opacity-60 cursor-wait' : ''}"
           >
-            Get Started
+            ${startingNew.value ? 'Creating campaign...' : 'Get Started'}
           </button>
         </div>
       `}

@@ -1,6 +1,6 @@
 import { html } from 'htm/preact';
 import { signal, computed } from '@preact/signals';
-import { campaign } from '../lib/campaign.js';
+import { campaign, endCampaign } from '../lib/campaign.js';
 import { navigateTo } from '../lib/router.js';
 import {
   STATUS,
@@ -12,7 +12,9 @@ import {
   getBrokerStatus,
   getBrokerHistory,
   formatDeadline,
+  retryBroker,
 } from '../lib/status-tracker.js';
+import { addNotification } from '../lib/notifications.js';
 import { allBrokers } from '../pages/Brokers.js';
 
 // ── Local UI State ──────────────────────────────────────────────────────────
@@ -28,6 +30,15 @@ const expandedHistory = signal(null);
 
 /** Whether overdue check has run this session */
 let _overdueChecked = false;
+
+/** Whether End Campaign confirmation dialog is showing (D-11) */
+const showEndCampaignDialog = signal(false);
+
+/** Whether End Campaign operation is in progress */
+const endingCampaign = signal(false);
+
+/** Broker ID currently being retried (for loading state) */
+const retryingBroker = signal(null);
 
 // ── Derived Data ─────────────────────────────────────────────────────────────
 
@@ -77,11 +88,12 @@ const filteredTracked = computed(() => {
     if (sort === 'status') {
       const statusOrder = {
         [STATUS.OVERDUE]: 0,
-        [STATUS.AWAITING]: 1,
-        [STATUS.ESCALATED]: 2,
-        [STATUS.REJECTED]: 3,
-        [STATUS.CONFIRMED]: 4,
-        [STATUS.SELECTED]: 5,
+        [STATUS.FAILED]: 1,
+        [STATUS.AWAITING]: 2,
+        [STATUS.ESCALATED]: 3,
+        [STATUS.REJECTED]: 4,
+        [STATUS.CONFIRMED]: 5,
+        [STATUS.SELECTED]: 6,
       };
       return (statusOrder[a.currentStatus] ?? 99) - (statusOrder[b.currentStatus] ?? 99);
     }
@@ -96,6 +108,38 @@ const availableStatuses = computed(() => {
   const statuses = new Set(trackedBrokers.value.map((b) => b.currentStatus));
   return [...statuses].sort();
 });
+
+// ── Event Handlers ──────────────────────────────────────────────────────────
+
+/** Retry all failed brokers -- resets them to SELECTED for re-send (D-04) */
+function handleRetryAllFailed() {
+  const statuses = campaign.value.statuses || {};
+  const selected = campaign.value.brokers.selected || [];
+  let count = 0;
+  for (const id of selected) {
+    const entry = statuses[id];
+    if (entry && entry.status === STATUS.FAILED) {
+      retryBroker(id);
+      count++;
+    }
+  }
+  if (count > 0) {
+    addNotification({ type: 'info', message: `${count} broker${count !== 1 ? 's' : ''} queued for retry` });
+  }
+}
+
+/** End the campaign -- delete temp address and mark ended (D-09, D-10, D-11) */
+async function handleEndCampaign() {
+  endingCampaign.value = true;
+  const result = await endCampaign();
+  showEndCampaignDialog.value = false;
+  endingCampaign.value = false;
+  if (result.deleteSuccess) {
+    addNotification({ type: 'success', message: 'Campaign ended. Temporary address deleted.' });
+  } else {
+    addNotification({ type: 'warning', message: 'Campaign ended locally. Temporary address could not be deleted -- it will expire automatically.' });
+  }
+}
 
 // ── SVG Icons ───────────────────────────────────────────────────────────────
 
@@ -204,14 +248,28 @@ export function Track() {
         </p>
       </div>
 
-      ${/* ── Stat Cards Grid (D-26) ── */''}
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      ${/* ── Stat Cards Grid (D-26, D-04) ── */''}
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <${StatCard} label="Sent" count=${counts.sent} color="sky" />
         <${StatCard} label="Awaiting" count=${counts.awaiting} color="amber" />
         <${StatCard} label="Confirmed" count=${counts.confirmed} color="emerald" />
         <${StatCard} label="Rejected" count=${counts.rejected} color="red" />
         <${StatCard} label="Overdue" count=${counts.overdue} color="rose" />
+        <${StatCard} label="Failed" count=${counts.failed} color="red" />
       </div>
+
+      ${/* ── Retry All Failed Button (D-04) ── */''}
+      ${counts.failed > 0 && !campaign.value.settings?.ended && html`
+        <div class="flex justify-end">
+          <button
+            type="button"
+            class="px-4 py-2 rounded-lg bg-[var(--ek-primary)] text-white text-sm font-medium hover:brightness-90 transition-all duration-150"
+            onClick=${handleRetryAllFailed}
+          >
+            Retry All Failed (${counts.failed})
+          </button>
+        </div>
+      `}
 
       ${/* ── Filter/Sort Controls (D-27) ── */''}
       <div class="flex flex-wrap items-center gap-3">
@@ -256,6 +314,52 @@ export function Track() {
           `
         }
       </div>
+
+      ${/* ── Campaign Management Section (D-09, D-10, D-11) ── */''}
+      <div class="rounded-xl bg-[var(--ek-surface-alt)] border border-[var(--ek-border)] p-6 mt-6">
+        <h3 class="text-sm font-semibold text-[var(--ek-text)] mb-2">Campaign Management</h3>
+        ${campaign.value.settings?.ended
+          ? html`<p class="text-sm text-[var(--ek-text-muted)]">Campaign ended on ${new Date(campaign.value.settings.endedAt).toLocaleDateString()}. Your campaign data is preserved for your records.</p>`
+          : html`
+            <p class="text-sm text-[var(--ek-text-muted)] mb-3">
+              End your campaign when you are done sending requests. This will delete your temporary email address.
+            </p>
+            <button
+              type="button"
+              class="px-4 py-2 rounded-lg border border-red-500/30 text-red-500 text-sm font-medium hover:bg-red-500/10 transition-all duration-150"
+              onClick=${() => { showEndCampaignDialog.value = true; }}
+            >
+              End Campaign
+            </button>
+          `
+        }
+      </div>
+
+      ${/* ── End Campaign Confirmation Dialog (D-11) ── */''}
+      ${showEndCampaignDialog.value && html`
+        <div class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick=${(e) => { if (e.target === e.currentTarget && !endingCampaign.value) showEndCampaignDialog.value = false; }}>
+          <div class="max-w-md bg-[var(--ek-surface-alt)] rounded-xl border border-[var(--ek-border)] p-6 shadow-2xl space-y-4">
+            <h3 class="text-lg font-semibold text-[var(--ek-text)]">End Campaign?</h3>
+            <p class="text-sm text-[var(--ek-text-muted)]">
+              This will delete your temporary email address. You won't be able to send more requests or receive broker replies. Continue?
+            </p>
+            <div class="flex gap-3 justify-end">
+              <button
+                type="button"
+                class="px-4 py-2 rounded-lg text-sm font-medium text-[var(--ek-text-muted)] hover:text-[var(--ek-text)] hover:bg-[var(--ek-surface)] transition-colors duration-150"
+                onClick=${() => { showEndCampaignDialog.value = false; }}
+                disabled=${endingCampaign.value}
+              >Cancel</button>
+              <button
+                type="button"
+                class="px-4 py-2 rounded-lg text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-all duration-150 ${endingCampaign.value ? 'opacity-60 cursor-wait' : ''}"
+                onClick=${handleEndCampaign}
+                disabled=${endingCampaign.value}
+              >${endingCampaign.value ? 'Ending...' : 'End Campaign'}</button>
+            </div>
+          </div>
+        </div>
+      `}
     </div>
   `;
 }
@@ -286,15 +390,17 @@ function BrokerStatusRow({ broker }) {
   const { statusEntry, currentStatus } = broker;
   const isExpanded = expandedHistory.value === broker.id;
   const isOverdue = currentStatus === STATUS.OVERDUE;
+  const isFailed = currentStatus === STATUS.FAILED;
   const deadline = statusEntry?.deadline;
   const deadlineInfo = deadline ? formatDeadline(deadline) : null;
   const history = getBrokerHistory(broker.id);
+  const campaignEnded = campaign.value.settings?.ended;
 
   // Status badge
   const colors = STATUS_COLORS[currentStatus] || { bg: 'bg-[var(--ek-surface)]', text: 'text-[var(--ek-text-muted)]' };
 
   return html`
-    <div class="${isOverdue ? 'bg-red-500/5' : ''}">
+    <div class="${isOverdue ? 'bg-red-500/5' : isFailed ? 'bg-red-500/5' : ''}">
       <div
         class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[var(--ek-surface)]/30 transition-colors duration-100"
         onClick=${() => { expandedHistory.value = isExpanded ? null : broker.id; }}
@@ -312,13 +418,34 @@ function BrokerStatusRow({ broker }) {
               ${STATUS_LABELS[currentStatus] || currentStatus}
             </span>
           </div>
+          ${/* D-04: Failed broker error reason */''}
+          ${isFailed && statusEntry?.error && html`
+            <div class="text-xs text-red-500 mt-0.5">
+              ${statusEntry.error.code}: ${statusEntry.error.message}
+            </div>
+          `}
           ${/* D-28: Deadline display */''}
-          ${deadlineInfo && html`
+          ${deadlineInfo && !isFailed && html`
             <div class="text-xs ${deadlineInfo.color} mt-0.5">
               ${deadlineInfo.text}
             </div>
           `}
         </div>
+
+        ${/* D-04: Per-broker Retry button for failed brokers */''}
+        ${isFailed && !campaignEnded && html`
+          <button
+            type="button"
+            class="flex-shrink-0 text-xs px-2.5 py-1 rounded border border-red-500/30 text-red-500 font-medium hover:bg-red-500/10 transition-colors duration-150"
+            onClick=${(e) => {
+              e.stopPropagation();
+              retryingBroker.value = broker.id;
+              retryBroker(broker.id);
+              addNotification({ type: 'info', message: `${broker.name} queued for retry`, brokerId: broker.id });
+              retryingBroker.value = null;
+            }}
+          >Retry</button>
+        `}
 
         ${/* D-29: Escalate button for overdue */''}
         ${isOverdue && html`
