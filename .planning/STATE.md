@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 6 context gathered
-last_updated: "2026-04-04T06:59:08.075Z"
+stopped_at: Completed 06-01-PLAN.md
+last_updated: "2026-04-04T07:37:00.000Z"
 last_activity: 2026-04-04
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 7
-  completed_plans: 6
-  percent: 43
+  total_plans: 10
+  completed_plans: 7
+  percent: 45
 ---
 
 # Project State
@@ -21,24 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-01)
 
 **Core value:** One-click automated data erasure across all known brokers without exposing the user's real email address.
-**Current focus:** Phase 5 -- Relay Infrastructure and E2E Encryption
+**Current focus:** Phase 6 -- Frontend Sending Integration
 
 ## Current Position
 
 Phase: 6 of 10 (frontend sending integration)
-Plan: Not started
+Plan: 1 of 3 complete
 Status: Executing
 Last activity: 2026-04-04
 
-Progress: [████░░░░░░] 43% (4 of 10 phases complete, 1 of 3 plans in Phase 5)
+Progress: [████░░░░░░] 45% (4 of 10 phases complete, 1 of 3 plans in Phase 6)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 9 (8 across v1.0 phases 1-4 + 1 in Phase 5)
+- Total plans completed: 10 (8 across v1.0 phases 1-4 + 1 in Phase 5 + 1 in Phase 6)
 - Average duration: ~5 min
-- Total execution time: ~44 min
+- Total execution time: ~47 min
 
 **By Phase:**
 
@@ -49,10 +49,11 @@ Progress: [████░░░░░░] 43% (4 of 10 phases complete, 1 of 3 
 | Phase 03 | 1 | 9min | 9min |
 | Phase 04 | 2 | ~6min | 3min |
 | Phase 05 | 1/3 | 4min | 4min |
+| Phase 06 | 1/3 | 3min | 3min |
 
 **Recent Trend:**
 
-- Last 5 plans: 3min, 5min, 9min, 3min, 4min
+- Last 5 plans: 5min, 9min, 3min, 4min, 3min
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -72,6 +73,8 @@ Recent decisions affecting current work:
 - [Phase 5-01]: Direct fetch to Resend API instead of SDK -- 20 lines vs 60KB bundle
 - [Phase 5-01]: IP + minute-bucket rate limit key pattern to avoid KV 1-write/sec per-key limit
 - [Phase 5-01]: vitest v3 + @cloudflare/vitest-pool-workers v0.8 for version compatibility
+- [Phase 6-01]: RELAY_URL as exported constant for relay-client consumers
+- [Phase 6-01]: FAILED brokers excluded from sent count but not from progress denominator
 
 ### Pending Todos
 
@@ -90,6 +93,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-04T06:59:08.073Z
-Stopped at: Phase 6 context gathered
-Resume file: .planning/phases/06-frontend-sending-integration/06-CONTEXT.md
+Last session: 2026-04-04T07:37:00.000Z
+Stopped at: Completed 06-01-PLAN.md
+Resume file: .planning/phases/06-frontend-sending-integration/06-01-SUMMARY.md
