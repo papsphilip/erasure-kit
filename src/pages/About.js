@@ -41,7 +41,7 @@ export function About() {
         <li><strong class="text-[var(--ek-text)]">Step 1: Enter your identity.</strong> Provide your name and the email addresses associated with the broker accounts you want to erase.</li>
         <li><strong class="text-[var(--ek-text)]">Step 2: Browse and select brokers.</strong> Choose from 169+ known data brokers, categorised by region (EU-wide, UK, DACH, Nordics) and type (people search, marketing, credit reporting, and more).</li>
         <li><strong class="text-[var(--ek-text)]">Step 3: Preview erasure emails.</strong> Each email is auto-generated with legally-compliant language citing the correct GDPR articles. You can customise any template before sending.</li>
-        <li><strong class="text-[var(--ek-text)]">Step 4: Send requests.</strong> The app opens your email client with pre-filled erasure emails via mailto: links. For longer emails, you can copy the text to your clipboard and paste it manually.</li>
+        <li><strong class="text-[var(--ek-text)]">Step 4: Send requests.</strong> Click "Send All" and the app dispatches your erasure requests through a secure relay from a temporary @erasurekit.uk address -- your real email is never shared with brokers.</li>
         <li><strong class="text-[var(--ek-text)]">Step 5: Track responses.</strong> Monitor which brokers have responded, track 30-day compliance deadlines, and flag overdue organisations for escalation to data protection authorities.</li>
       </ul>
 
@@ -55,7 +55,7 @@ export function About() {
         <li><strong class="text-[var(--ek-text)]">No tracking of any kind.</strong> No cookies, no analytics scripts, no telemetry, no usage metrics. The app does not know who you are, how often you use it, or what you do with it.</li>
         <li><strong class="text-[var(--ek-text)]">Local storage only.</strong> Your personal data (name, email addresses) is stored in your browser's local storage. It never leaves your device unless you explicitly export it.</li>
         <li><strong class="text-[var(--ek-text)]">Save and load campaigns.</strong> You can save your campaign progress as a JSON file on your own device and load it later. This file stays on your computer -- ErasureKit has no access to it once saved.</li>
-        <li><strong class="text-[var(--ek-text)]">Fully offline capable.</strong> The app is a single HTML file that you can download and run without an internet connection. The only network activity is when you send emails through your own email client.</li>
+        <li><strong class="text-[var(--ek-text)]">Minimal network activity.</strong> The only outbound calls are to the erasurekit.uk relay when sending erasure emails. All email content is end-to-end encrypted -- the relay cannot read your messages.</li>
         <li><strong class="text-[var(--ek-text)]">No accounts or sign-up.</strong> There is no registration, no email verification, and no user database. You open the app and start using it.</li>
       </ul>
 

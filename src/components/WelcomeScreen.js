@@ -138,77 +138,8 @@ export function WelcomeScreen() {
       <!-- Privacy statement -->
       <p class="text-sm text-[var(--ek-text-muted)] text-center mt-8 flex items-center justify-center gap-1.5">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-        No data leaves your browser. No accounts. No tracking.
+        No data leaves your browser. No accounts. No tracking. Open source.
       </p>
-
-      <!-- ─── Informational sections below CTA ─── -->
-
-      <div class="border-t border-[var(--ek-border)] mt-10 pt-10">
-
-        <!-- Your Right to Be Forgotten -->
-        <div class="text-center">
-          <h2 class="text-lg font-semibold mb-3">Your Right to Be Forgotten</h2>
-          <p class="text-sm text-[var(--ek-text-muted)] leading-relaxed">
-            Data brokers collect, aggregate, and sell your personal information -- often without your knowledge or consent.
-            Under GDPR Article 17, every European has the right to demand that organisations delete their personal data.
-            This is not a request -- it is a legally enforceable right.
-            ErasureKit automates this process so you can exercise it in minutes, not hours.
-          </p>
-        </div>
-
-        <!-- How It Works -->
-        <div class="mt-12">
-          <h2 class="text-lg font-semibold mb-3 text-center">How It Works</h2>
-          <div class="space-y-5 mt-5">
-            <div class="flex items-start gap-4">
-              <div class="w-8 h-8 rounded-full bg-[var(--ek-primary)]/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg class="w-4 h-4 text-[var(--ek-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-              </div>
-              <div>
-                <p class="text-sm font-semibold mb-0.5">1. Enter your details</p>
-                <p class="text-sm text-[var(--ek-text-muted)] leading-relaxed">Provide your name and the email addresses you want erased from broker databases.</p>
-              </div>
-            </div>
-            <div class="flex items-start gap-4">
-              <div class="w-8 h-8 rounded-full bg-[var(--ek-primary)]/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg class="w-4 h-4 text-[var(--ek-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
-              </div>
-              <div>
-                <p class="text-sm font-semibold mb-0.5">2. Select brokers</p>
-                <p class="text-sm text-[var(--ek-text-muted)] leading-relaxed">Choose from 169+ known data brokers across Europe, filtered by region and category.</p>
-              </div>
-            </div>
-            <div class="flex items-start gap-4">
-              <div class="w-8 h-8 rounded-full bg-[var(--ek-primary)]/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg class="w-4 h-4 text-[var(--ek-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-              </div>
-              <div>
-                <p class="text-sm font-semibold mb-0.5">3. Send requests</p>
-                <p class="text-sm text-[var(--ek-text-muted)] leading-relaxed">The app generates legally-compliant erasure emails citing the correct GDPR articles and opens your email client to send them.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Privacy by Design -->
-        <div class="mt-12">
-          <h2 class="text-lg font-semibold mb-3 text-center">Privacy by Design</h2>
-          <div class="space-y-4 mt-5">
-            <div class="flex items-start gap-3">
-              <svg class="w-4 h-4 text-[var(--ek-primary)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-              <p class="text-sm text-[var(--ek-text-muted)] leading-relaxed"><strong class="text-[var(--ek-text)]">Runs entirely in your browser</strong> -- no server, no cloud, no data leaves your device.</p>
-            </div>
-            <div class="flex items-start gap-3">
-              <svg class="w-4 h-4 text-[var(--ek-primary)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-              <p class="text-sm text-[var(--ek-text-muted)] leading-relaxed"><strong class="text-[var(--ek-text)]">No accounts or tracking</strong> -- no cookies, no analytics, no sign-up required.</p>
-            </div>
-            <div class="flex items-start gap-3">
-              <svg class="w-4 h-4 text-[var(--ek-primary)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
-              <p class="text-sm text-[var(--ek-text-muted)] leading-relaxed"><strong class="text-[var(--ek-text)]">Open source</strong> -- inspect the code, contribute, or fork it for your own use.</p>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   `;
 }
