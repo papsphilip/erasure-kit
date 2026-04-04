@@ -9,6 +9,20 @@ vi.mock('browser-fs-access', () => ({
   supported: true,
 }));
 
+// Mock crypto.js (campaign.js now imports generateCampaignKeyPair for startNewCampaign)
+const mockGenerateCampaignKeyPair = vi.fn().mockResolvedValue({
+  publicKeyJwk: { kty: 'RSA', n: 'mock-public' },
+  privateKeyJwk: { kty: 'RSA', n: 'mock-private' },
+});
+vi.mock('./crypto.js', () => ({
+  generateCampaignKeyPair: mockGenerateCampaignKeyPair,
+}));
+
+// Mock demo-mode.js (campaign.js now imports demoMode for endCampaign)
+vi.mock('./demo-mode.js', () => ({
+  demoMode: { value: false },
+}));
+
 describe('campaign', () => {
   let campaign, hasExistingCampaign, lastAutoSaved;
   let updateIdentity, updateIdentityEmail, addEmail, removeEmail;
@@ -22,6 +36,11 @@ describe('campaign', () => {
     localStorage.clear();
     mockFileSave.mockReset();
     mockFileOpen.mockReset();
+    mockGenerateCampaignKeyPair.mockClear();
+    mockGenerateCampaignKeyPair.mockResolvedValue({
+      publicKeyJwk: { kty: 'RSA', n: 'mock-public' },
+      privateKeyJwk: { kty: 'RSA', n: 'mock-private' },
+    });
 
     // Dynamic import to get fresh module state per test
     vi.resetModules();
@@ -297,16 +316,24 @@ describe('campaign', () => {
   });
 
   describe('startNewCampaign', () => {
-    it('resets campaign to empty and clears localStorage', () => {
+    it('resets campaign to empty and clears localStorage', async () => {
       // First, set some data
       updateIdentity('fullName', 'To Be Cleared');
       vi.advanceTimersByTime(600); // let auto-save run
       expect(localStorage.getItem('ek-campaign')).not.toBe(null);
 
-      startNewCampaign();
+      await startNewCampaign();
       expect(campaign.value.identity.fullName).toBe('');
       expect(hasExistingCampaign.value).toBe(false);
       expect(localStorage.getItem('ek-campaign')).toBe(null);
+    });
+
+    it('generates encryption keys and temp email on new campaign', async () => {
+      await startNewCampaign();
+      expect(campaign.value.encryption).not.toBeNull();
+      expect(campaign.value.encryption.publicKeyJwk).toBeDefined();
+      expect(campaign.value.encryption.privateKeyJwk).toBeDefined();
+      expect(campaign.value.tempEmail).toMatch(/^[a-z0-9]{8}@erasurekit\.uk$/);
     });
   });
 

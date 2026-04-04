@@ -1,4 +1,6 @@
 import { signal, effect } from '@preact/signals';
+import { generateCampaignKeyPair } from './crypto.js';
+import { demoMode } from './demo-mode.js';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -300,13 +302,76 @@ export async function loadCampaignFromFile() {
   }
 }
 
+// ── Temp Address Generation ──────────────────────────────────────────────────
+
+/**
+ * Generate a random 8-character alphanumeric slug for temp email addresses.
+ * Uses crypto.getRandomValues for secure randomness.
+ * @returns {string} 8-character string from [a-z0-9]
+ */
+export function generateTempSlug() {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  const array = crypto.getRandomValues(new Uint8Array(8));
+  return Array.from(array, (byte) => chars[byte % chars.length]).join('');
+}
+
 // ── Campaign Reset ─────────────────────────────────────────────────────────────
 
 /**
- * Start a brand new campaign. Clears localStorage and resets all state.
+ * Start a brand new campaign. Clears localStorage, generates RSA key pair
+ * and temporary email address, then resets all state (D-06).
+ * ASYNC -- callers must await this function.
  */
-export function startNewCampaign() {
+export async function startNewCampaign() {
   localStorage.removeItem(STORAGE_KEY);
-  campaign.value = createEmptyCampaign();
+
+  // D-06: Generate key pair and temp address on campaign creation
+  const { publicKeyJwk, privateKeyJwk } = await generateCampaignKeyPair();
+  const tempSlug = generateTempSlug();
+  const tempEmail = `${tempSlug}@erasurekit.uk`;
+
+  const empty = createEmptyCampaign();
+  campaign.value = {
+    ...empty,
+    tempEmail,
+    encryption: { publicKeyJwk, privateKeyJwk },
+  };
   hasExistingCampaign.value = false;
+}
+
+// ── End Campaign ────────────────────────────────────────────────────────────
+
+/**
+ * End the current campaign. Deletes the temp address via relay (D-10)
+ * and marks the campaign as ended. Campaign data stays for records.
+ * @returns {Promise<{ deleteSuccess: boolean }>}
+ */
+export async function endCampaign() {
+  const { relayDeleteAddress } = await import('./relay-client.js');
+  const slug = campaign.value.tempEmail?.split('@')[0];
+  let deleteSuccess = false;
+
+  if (slug && !demoMode.value) {
+    try {
+      const result = await relayDeleteAddress(slug);
+      deleteSuccess = result.success;
+    } catch {
+      deleteSuccess = false;
+    }
+  } else {
+    deleteSuccess = true; // demo mode or no slug
+  }
+
+  campaign.value = {
+    ...campaign.value,
+    updatedAt: new Date().toISOString(),
+    settings: {
+      ...campaign.value.settings,
+      ended: true,
+      endedAt: new Date().toISOString(),
+    },
+    tempEmail: null,
+  };
+
+  return { deleteSuccess };
 }
