@@ -129,7 +129,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [x] 06-01-PLAN.md -- Relay-client module (POST /send, DELETE /address) + STATUS.FAILED lifecycle in status-tracker
-- [ ] 06-02-PLAN.md -- Email sender refactor (mailto: to relay), campaign init with crypto key generation, end campaign flow
+- [x] 06-02-PLAN.md -- Email sender refactor (mailto: to relay), campaign init with crypto key generation, end campaign flow
 - [ ] 06-03-PLAN.md -- UI integration: SendProgressModal, WelcomeScreen temp address, Brokers confirmation dialog, Track page retry/end campaign
 **UI hint**: yes
 
@@ -195,7 +195,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 3. Broker Database | v1.0 | 1/1 | Complete | 2026-03-29 |
 | 4. Email Templates | v1.0 | 2/2 | Complete | 2026-03-30 |
 | 5. Relay Infrastructure and E2E Encryption | v2.0 | 0/3 | Planning complete | - |
-| 6. Frontend Sending Integration | v2.0 | 1/3 | In progress | - |
+| 6. Frontend Sending Integration | v2.0 | 2/3 | In Progress|  |
 | 7. Reply Monitoring and Response Classification | v2.0 | 0/0 | Not started | - |
 | 8. Quota-Aware Batching and Campaign Resume | v2.0 | 0/0 | Not started | - |
 | 9. Contributor Scaling and Relay Registry | v2.0 | 0/0 | Not started | - |

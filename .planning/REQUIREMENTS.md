@@ -54,8 +54,8 @@ Requirements for the relay-based sending system. Each maps to roadmap phases 5-1
 - [x] **RELAY-01**: Cloudflare Worker deployed at api.erasurekit.uk accepts encrypted email payloads and sends them via Resend API from generated @erasurekit.uk addresses
 - [x] **RELAY-02**: Each campaign gets a unique temporary sender address (e.g. a7k9x@erasurekit.uk) that persists across the campaign session
 - [x] **RELAY-03**: Worker returns structured JSON responses (success/failure per broker, quota remaining, error details) for frontend consumption
-- [ ] **RELAY-04**: "Send All" button dispatches all selected brokers' erasure requests in automated sequence through the relay
-- [ ] **RELAY-05**: Frontend email-sender module calls the Worker relay API instead of opening mailto: links
+- [x] **RELAY-04**: "Send All" button dispatches all selected brokers' erasure requests in automated sequence through the relay
+- [x] **RELAY-05**: Frontend email-sender module calls the Worker relay API instead of opening mailto: links
 
 ### End-to-End Encryption
 
@@ -85,8 +85,8 @@ Requirements for the relay-based sending system. Each maps to roadmap phases 5-1
 ### Status Tracking
 
 - [ ] **STAT-01**: Each broker has a tracked status: not selected -> selected -> awaiting response -> confirmed / rejected / escalated / overdue
-- [ ] **STAT-02**: App calculates "one calendar month" deadline from send date using proper date arithmetic (not naive +30 days)
-- [ ] **STAT-03**: App flags brokers as overdue when they exceed the calendar-month deadline
+- [x] **STAT-02**: App calculates "one calendar month" deadline from send date using proper date arithmetic (not naive +30 days)
+- [x] **STAT-03**: App flags brokers as overdue when they exceed the calendar-month deadline
 - [x] **STAT-04**: Dashboard shows aggregate stats: total brokers, selected, sent, awaiting, confirmed, rejected, overdue *(infrastructure built in v1.0 Phase 5)*
 - [x] **STAT-05**: Dashboard shows overall campaign progress as a percentage *(infrastructure built in v1.0 Phase 5)*
 
@@ -175,11 +175,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RELAY-03 | Phase 5: Relay Infrastructure and E2E Encryption | Complete |
 | E2EE-01 | Phase 5: Relay Infrastructure and E2E Encryption | Pending |
 | E2EE-02 | Phase 5: Relay Infrastructure and E2E Encryption | Pending |
-| RELAY-04 | Phase 6: Frontend Sending Integration | Pending |
-| RELAY-05 | Phase 6: Frontend Sending Integration | Pending |
+| RELAY-04 | Phase 6: Frontend Sending Integration | Complete |
+| RELAY-05 | Phase 6: Frontend Sending Integration | Complete |
 | STAT-01 | Phase 6: Frontend Sending Integration | Pending |
-| STAT-02 | Phase 6: Frontend Sending Integration | Pending |
-| STAT-03 | Phase 6: Frontend Sending Integration | Pending |
+| STAT-02 | Phase 6: Frontend Sending Integration | Complete |
+| STAT-03 | Phase 6: Frontend Sending Integration | Complete |
 | STAT-04 | Phase 6: Frontend Sending Integration | Complete |
 | STAT-05 | Phase 6: Frontend Sending Integration | Complete |
 | RPLY-01 | Phase 7: Reply Monitoring and Response Classification | Pending |
