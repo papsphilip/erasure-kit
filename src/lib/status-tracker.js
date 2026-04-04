@@ -16,6 +16,7 @@ export const STATUS = {
   REJECTED: 'rejected',
   ESCALATED: 'escalated',
   OVERDUE: 'overdue',
+  FAILED: 'failed',
 };
 
 /**
@@ -29,6 +30,7 @@ export const STATUS_LABELS = {
   [STATUS.REJECTED]: 'Rejected',
   [STATUS.ESCALATED]: 'Escalated',
   [STATUS.OVERDUE]: 'Overdue',
+  [STATUS.FAILED]: 'Failed',
 };
 
 /**
@@ -41,6 +43,7 @@ export const STATUS_COLORS = {
   [STATUS.ESCALATED]: { bg: 'bg-orange-500/15', text: 'text-orange-500', dot: 'bg-orange-500' },
   [STATUS.OVERDUE]: { bg: 'bg-red-700/15', text: 'text-red-600', dot: 'bg-red-700' },
   [STATUS.SELECTED]: { bg: 'bg-sky-500/15', text: 'text-sky-500', dot: 'bg-sky-500' },
+  [STATUS.FAILED]: { bg: 'bg-red-500/15', text: 'text-red-500', dot: 'bg-red-500' },
 };
 
 // ── Status Helpers ───────────────────────────────────────────────────────────
@@ -142,6 +145,78 @@ export function markBrokerSent(brokerId) {
 }
 
 /**
+ * Mark a broker as failed (D-04): records error code and message.
+ * Preserves existing sentAt and deadline values.
+ * @param {string} brokerId - The broker ID slug
+ * @param {string} errorCode - Error code from relay (e.g. 'RESEND_FAILED', 'RATE_LIMITED')
+ * @param {string} errorMessage - Human-readable error message
+ */
+export function markBrokerFailed(brokerId, errorCode, errorMessage) {
+  const existing = getBrokerStatus(brokerId) || {
+    status: STATUS.SELECTED,
+    sentAt: null,
+    deadline: null,
+    history: [],
+  };
+
+  const historyEntry = {
+    status: STATUS.FAILED,
+    at: new Date().toISOString(),
+    details: `${errorCode}: ${errorMessage}`,
+  };
+
+  campaign.value = {
+    ...campaign.value,
+    updatedAt: new Date().toISOString(),
+    statuses: {
+      ...campaign.value.statuses,
+      [brokerId]: {
+        ...existing,
+        status: STATUS.FAILED,
+        error: { code: errorCode, message: errorMessage },
+        history: [...existing.history, historyEntry],
+      },
+    },
+  };
+}
+
+/**
+ * Retry a failed broker — reset status back to SELECTED for re-send.
+ * Clears the error field but preserves sentAt and deadline.
+ * @param {string} brokerId - The broker ID slug
+ */
+export function retryBroker(brokerId) {
+  const existing = getBrokerStatus(brokerId) || {
+    status: STATUS.FAILED,
+    sentAt: null,
+    deadline: null,
+    history: [],
+  };
+
+  const historyEntry = {
+    status: STATUS.SELECTED,
+    at: new Date().toISOString(),
+    details: 'Queued for retry',
+  };
+
+  // Destructure to remove error field from the spread
+  const { error, ...rest } = existing;
+
+  campaign.value = {
+    ...campaign.value,
+    updatedAt: new Date().toISOString(),
+    statuses: {
+      ...campaign.value.statuses,
+      [brokerId]: {
+        ...rest,
+        status: STATUS.SELECTED,
+        history: [...existing.history, historyEntry],
+      },
+    },
+  };
+}
+
+/**
  * Check all brokers for overdue status (D-39, D-40).
  * Overdue = day after deadline. If deadline is Apr 28 and it's Apr 29, broker is overdue.
  * Auto-updates status to 'overdue' for brokers past their deadline.
@@ -217,7 +292,8 @@ export function getStatusCounts() {
     rejected: 0,
     escalated: 0,
     overdue: 0,
-    sent: 0, // sent = awaiting + confirmed + rejected + escalated + overdue
+    failed: 0,
+    sent: 0, // sent = awaiting + confirmed + rejected + escalated + overdue (NOT failed)
   };
 
   for (const brokerId of selected) {
@@ -244,6 +320,9 @@ export function getStatusCounts() {
       case STATUS.OVERDUE:
         counts.overdue++;
         counts.sent++;
+        break;
+      case STATUS.FAILED:
+        counts.failed++;
         break;
     }
   }
