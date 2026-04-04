@@ -1,9 +1,9 @@
 ---
 scope: tools/erasure-kit
 status: paused
-phase: "v2.0 roadmap created -- Phase 5 ready to plan"
-gsd_command: "gsd:plan-phase 5"
-last_updated: "2026-04-03"
+phase: "Phase 5 complete — relay deployed at api.erasurekit.uk, ready for Phase 6"
+gsd_command: "gsd:discuss-phase 6"
+last_updated: "2026-04-04"
 ---
 
 # Continue Here -- ErasureKit
