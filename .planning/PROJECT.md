@@ -23,20 +23,20 @@ One-click automated data erasure across all known brokers without exposing the u
 ### Active (v2.0 — Relay-Based Email Architecture)
 
 - [ ] Cloudflare Worker relay that sends emails via Resend API from temp `@erasurekit.uk` addresses
-- [ ] "Send All" button that dispatches all selected brokers in automated batches
+- [x] "Send All" button that dispatches all selected brokers in automated batches *(Validated in Phase 6: Frontend Sending Integration)*
 - [ ] Quota-aware batching with calendar UI showing send schedule across days
 - [ ] Relay registry with load balancing across contributor-donated domains
-- [ ] End-to-end encryption — domain owner cannot read user emails
+- [x] End-to-end encryption — domain owner cannot read user emails *(Validated in Phase 5: Relay Infrastructure)*
 - [ ] Automatic reply monitoring via Cloudflare Email Routing
 - [ ] Campaign resume across sessions (queued emails pick up automatically)
 - [ ] Contributor donation flow — $2/year domain to increase relay capacity
 - [ ] Privacy transparency on About page — full architecture explanation
-- [ ] Track 30-day GDPR compliance deadline per broker
+- [x] Track 30-day GDPR compliance deadline per broker *(Validated in Phase 6: Frontend Sending Integration)*
 - [ ] Detect and categorize broker responses (confirmation, rejection, request for more info)
 - [ ] Notify user when brokers are overdue (past 30-day deadline)
 - [ ] Pre-filled escalation templates for overdue brokers (follow-up warning + DPA complaint)
 - [ ] Legal reference page: GDPR Article 17 text, identity verification guide, DPA directory
-- [ ] Dashboard showing overall stats: sent, responded, overdue, completed
+- [x] Dashboard showing overall stats: sent, responded, overdue, completed *(Validated in Phase 6: Frontend Sending Integration)*
 
 ### Out of Scope
 
@@ -125,4 +125,4 @@ This document evolves at phase transitions and milestone boundaries.
 - Legal reference pages and escalation templates
 
 ---
-*Last updated: 2026-04-01 — Milestone v2.0 started*
+*Last updated: 2026-04-04 — Phase 6 (Frontend Sending Integration) complete*
