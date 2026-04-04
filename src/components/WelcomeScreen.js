@@ -1,7 +1,7 @@
 import { html } from 'htm/preact';
 import { signal } from '@preact/signals';
 import { navigateTo } from '../lib/router.js';
-import { hasExistingCampaign, campaign, startNewCampaign, loadCampaignFromFile } from '../lib/campaign.js';
+import { hasExistingCampaign, campaign, startNewCampaign, loadCampaignFromFile, clearAllCampaigns } from '../lib/campaign.js';
 
 /** Error message for failed file load on welcome screen */
 const welcomeLoadError = signal(null);
@@ -110,12 +110,18 @@ export function WelcomeScreen() {
           </div>
         `}
 
-        <div class="text-center">
+        <div class="flex justify-center gap-4">
           <button
             onClick=${handleWelcomeLoad}
             class="text-sm text-[var(--ek-text-muted)] hover:text-[var(--ek-primary)] underline transition-colors"
           >
             Load from file
+          </button>
+          <button
+            onClick=${clearAllCampaigns}
+            class="text-sm text-[var(--ek-text-muted)] hover:text-[var(--ek-danger)] underline transition-colors"
+          >
+            Clear all data
           </button>
         </div>
 
@@ -124,7 +130,7 @@ export function WelcomeScreen() {
         `}
       ` : html`
         <!-- New user flow -->
-        <div class="flex justify-center mb-10">
+        <div class="flex flex-col items-center gap-3 mb-10">
           <button
             onClick=${async () => { startingNew.value = true; await startNewCampaign(); startingNew.value = false; navigateTo('identity'); }}
             disabled=${startingNew.value}

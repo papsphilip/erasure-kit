@@ -355,11 +355,30 @@ export async function startNewCampaign() {
   const tempEmail = `${tempSlug}@erasurekit.uk`;
 
   const empty = createEmptyCampaign();
+
+  // Pre-fill identity in demo mode so users can skip straight to brokers
+  if (demoMode.value) {
+    empty.identity.fullName = 'Demo User';
+    empty.identity.emails = ['demo@example.com'];
+  }
+
   campaign.value = {
     ...empty,
     tempEmail,
     encryption: { publicKeyJwk, privateKeyJwk },
   };
+  hasExistingCampaign.value = false;
+}
+
+// ── Clear All Campaign Data ───────────────────────────────────────────────────
+
+/**
+ * Wipe all campaign data from localStorage and reset to a fresh empty state.
+ * Used for the "Clear All Data" button on the welcome screen.
+ */
+export function clearAllCampaigns() {
+  localStorage.removeItem(STORAGE_KEY);
+  campaign.value = createEmptyCampaign();
   hasExistingCampaign.value = false;
 }
 
