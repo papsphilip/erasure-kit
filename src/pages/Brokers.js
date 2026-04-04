@@ -408,18 +408,18 @@ export function Brokers() {
     identity.emails.some((e) => e && e.trim());
 
   return html`
-    <div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto px-4 py-10">
 
       ${/* ── Sticky Toolbar ── */''}
-      <div class="sticky top-[100px] z-10 bg-[var(--ek-surface-alt)] rounded-t-xl border border-b-0 border-[var(--ek-border)] p-4 space-y-3">
+      <div class="sticky top-[110px] z-10 bg-[var(--ek-surface-alt)] rounded-t-xl border border-b-0 border-[var(--ek-border)] p-4 space-y-3">
 
         ${/* ── Header ── */''}
         <div class="flex items-center justify-between">
-          <h2 class="text-xl font-semibold text-[var(--ek-text)]">Select Brokers</h2>
+          <h2 class="text-2xl font-semibold text-[var(--ek-text)]">Select Brokers</h2>
           ${selCount > 0 && html`
             <button
               type="button"
-              class="text-sm text-[var(--ek-text-muted)] hover:text-[var(--ek-danger)] transition-colors duration-150"
+              class="text-base text-[var(--ek-text-muted)] hover:text-[var(--ek-danger)] transition-colors duration-150"
               onClick=${deselectAllBrokers}
             >
               ${selCount} selected
@@ -437,13 +437,13 @@ export function Brokers() {
             <input
               type="text"
               placeholder="Search brokers..."
-              class="w-full h-10 pl-9 pr-3 rounded-lg bg-[var(--ek-surface)] border border-[var(--ek-border)] text-[var(--ek-text)] placeholder:text-[var(--ek-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ek-primary)] text-sm"
+              class="w-full h-12 pl-9 pr-3 rounded-lg bg-[var(--ek-surface)] border border-[var(--ek-border)] text-[var(--ek-text)] placeholder:text-[var(--ek-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ek-primary)] text-base"
               value=${searchQuery.value}
               onInput=${(e) => { searchQuery.value = e.target.value; }}
             />
           </div>
           <select
-            class="h-10 px-3 rounded-lg bg-[var(--ek-surface)] border border-[var(--ek-border)] text-[var(--ek-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ek-primary)] cursor-pointer"
+            class="h-12 px-3 rounded-lg bg-[var(--ek-surface)] border border-[var(--ek-border)] text-[var(--ek-text)] text-base focus:outline-none focus:ring-2 focus:ring-[var(--ek-primary)] cursor-pointer"
             value=${regionFilter.value}
             onChange=${(e) => { regionFilter.value = e.target.value; }}
           >
@@ -451,7 +451,7 @@ export function Brokers() {
             ${regions.value.map((r) => html`<option value=${r}>${r}</option>`)}
           </select>
           <select
-            class="h-10 px-3 rounded-lg bg-[var(--ek-surface)] border border-[var(--ek-border)] text-[var(--ek-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ek-primary)] cursor-pointer"
+            class="h-12 px-3 rounded-lg bg-[var(--ek-surface)] border border-[var(--ek-border)] text-[var(--ek-text)] text-base focus:outline-none focus:ring-2 focus:ring-[var(--ek-primary)] cursor-pointer"
             value=${categoryFilter.value}
             onChange=${(e) => { categoryFilter.value = e.target.value; }}
           >
@@ -461,7 +461,7 @@ export function Brokers() {
         </div>
 
         ${/* ── Status Bar ── */''}
-        <div class="flex items-center justify-between text-xs text-[var(--ek-text-muted)]">
+        <div class="flex items-center justify-between text-sm text-[var(--ek-text-muted)]">
           <div class="flex items-center gap-3">
             <span>Showing ${visible.length} of ${total} brokers</span>
             ${hasActiveFilters.value && html`
@@ -529,7 +529,7 @@ export function Brokers() {
         ${/* ── Sticky Bottom Bar (D-08) ── */''}
         <div class="sticky bottom-0 p-4 border-t border-[var(--ek-border)] bg-[var(--ek-surface-alt)]">
           ${selCount > 0 && html`
-            <div class="flex items-center justify-between mb-2 text-sm text-[var(--ek-text-muted)]">
+            <div class="flex items-center justify-between mb-3 text-base text-[var(--ek-text-muted)]">
               <span>${selCount} selected${sent > 0 ? html` \u00B7 <span class="text-emerald-500">${sent} sent</span>` : ''}</span>
               ${campaign.value.settings?.ended
                 ? html`<span class="text-sm text-[var(--ek-text-muted)] italic">Campaign ended</span>`
@@ -547,7 +547,7 @@ export function Brokers() {
           `}
           <button
             type="button"
-            class="w-full h-12 rounded-lg font-semibold text-white transition-all duration-150 ${
+            class="w-full h-14 rounded-lg text-lg font-semibold text-white transition-all duration-150 ${
               canContinue
                 ? 'bg-[var(--ek-primary)] hover:brightness-90 active:brightness-85 cursor-pointer'
                 : 'bg-[var(--ek-primary)]/40 cursor-not-allowed'
@@ -567,13 +567,13 @@ export function Brokers() {
       ${showSendConfirm.value && html`
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick=${(e) => { if (e.target === e.currentTarget) handleCancelSend(); }}>
           <div class="bg-[var(--ek-surface-alt)] rounded-xl shadow-2xl border border-[var(--ek-border)] p-6 max-w-md w-full space-y-4">
-            <h3 class="text-lg font-semibold text-[var(--ek-text)]">Send ${unsent} erasure requests?</h3>
+            <h3 class="text-xl font-semibold text-[var(--ek-text)]">Send ${unsent} erasure requests?</h3>
             ${campaign.value.tempEmail && html`
-              <p class="text-sm text-[var(--ek-text-muted)]">
+              <p class="text-base text-[var(--ek-text-muted)]">
                 Requests will be sent from: <span class="font-mono text-[var(--ek-primary)] font-medium">${campaign.value.tempEmail}</span>
               </p>
             `}
-            <p class="text-sm text-[var(--ek-text-muted)]">
+            <p class="text-base text-[var(--ek-text-muted)]">
               <strong class="text-[var(--ek-text)]">This will send real emails to real brokers.</strong>
             </p>
             <div class="flex gap-3 justify-end">

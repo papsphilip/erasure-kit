@@ -22,12 +22,12 @@ effect(() => {
  */
 export function Footer() {
   return html`
-    <footer class="h-12 flex items-center justify-between px-4 border-t border-[var(--ek-border)] text-sm text-[var(--ek-text-muted)]">
-      <div class="w-32 flex items-center gap-1 transition-opacity duration-300 ${showAutoSaved.value ? 'opacity-100' : 'opacity-0'}">
-        <svg class="w-3.5 h-3.5 text-[var(--ek-success)]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <footer class="h-14 flex items-center justify-between px-4 border-t border-[var(--ek-border)] text-base text-[var(--ek-text-muted)]">
+      <div class="w-32 flex items-center gap-1.5 transition-opacity duration-300 ${showAutoSaved.value ? 'opacity-100' : 'opacity-0'}">
+        <svg class="w-4 h-4 text-[var(--ek-success)]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
         </svg>
-        <span class="text-xs">Auto-saved</span>
+        <span class="text-sm">Auto-saved</span>
       </div>
       <div class="flex items-center gap-4">
         <button

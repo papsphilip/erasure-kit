@@ -202,8 +202,8 @@ export function Track() {
     return html`
       <div class="max-w-4xl mx-auto px-4 py-16 text-center">
         <${InboxIcon} />
-        <h2 class="text-xl font-semibold text-[var(--ek-text)] mt-4 mb-2">No requests sent yet</h2>
-        <p class="text-[var(--ek-text-muted)] mb-6">Select brokers and send erasure requests to start tracking.</p>
+        <h2 class="text-2xl font-semibold text-[var(--ek-text)] mt-4 mb-3">No requests sent yet</h2>
+        <p class="text-base text-[var(--ek-text-muted)] mb-6">Select brokers and send erasure requests to start tracking.</p>
         <button
           type="button"
           class="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[var(--ek-primary)] text-white font-medium hover:brightness-90 transition-all duration-150"
@@ -217,24 +217,24 @@ export function Track() {
   }
 
   return html`
-    <div class="max-w-4xl mx-auto px-4 py-8 space-y-6">
+    <div class="max-w-4xl mx-auto px-4 py-10 space-y-8">
 
       ${/* ── Success Banner (D-34) ── */''}
       ${allResolved && html`
         <div class="rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-6 text-center">
           <${CheckCircleIcon} />
-          <h2 class="text-lg font-semibold text-emerald-500 mt-3 mb-1">All brokers resolved!</h2>
-          <p class="text-sm text-[var(--ek-text-muted)]">Your data erasure campaign is complete. Save your progress for your records.</p>
+          <h2 class="text-xl font-semibold text-emerald-500 mt-3 mb-2">All brokers resolved!</h2>
+          <p class="text-base text-[var(--ek-text-muted)]">Your data erasure campaign is complete. Save your progress for your records.</p>
         </div>
       `}
 
       ${/* ── Progress Bar (D-25) ── */''}
       <div class="rounded-xl bg-[var(--ek-surface-alt)] border border-[var(--ek-border)] p-6">
-        <div class="flex items-center justify-between mb-2">
-          <h2 class="text-xl font-semibold text-[var(--ek-text)]">Campaign Progress</h2>
-          <span class="text-lg font-bold text-[var(--ek-primary)]">${progress}%</span>
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-2xl font-semibold text-[var(--ek-text)]">Campaign Progress</h2>
+          <span class="text-xl font-bold text-[var(--ek-primary)]">${progress}%</span>
         </div>
-        <div class="w-full h-3 bg-[var(--ek-surface)] rounded-full overflow-hidden">
+        <div class="w-full h-4 bg-[var(--ek-surface)] rounded-full overflow-hidden">
           <div
             class="h-full rounded-full transition-all duration-500 ${
               allResolved ? 'bg-emerald-500' : 'bg-[var(--ek-primary)]'
@@ -242,14 +242,14 @@ export function Track() {
             style="width: ${progress}%"
           ></div>
         </div>
-        <p class="text-xs text-[var(--ek-text-muted)] mt-2">
+        <p class="text-sm text-[var(--ek-text-muted)] mt-3">
           ${counts.confirmed + counts.rejected} of ${counts.total} brokers resolved
           (${counts.confirmed} confirmed, ${counts.rejected} rejected)
         </p>
       </div>
 
       ${/* ── Stat Cards Grid (D-26, D-04) ── */''}
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         <${StatCard} label="Sent" count=${counts.sent} color="sky" />
         <${StatCard} label="Awaiting" count=${counts.awaiting} color="amber" />
         <${StatCard} label="Confirmed" count=${counts.confirmed} color="emerald" />
@@ -274,7 +274,7 @@ export function Track() {
       ${/* ── Filter/Sort Controls (D-27) ── */''}
       <div class="flex flex-wrap items-center gap-3">
         <select
-          class="h-10 px-3 rounded-lg bg-[var(--ek-surface)] border border-[var(--ek-border)] text-[var(--ek-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ek-primary)] cursor-pointer"
+          class="h-12 px-3 rounded-lg bg-[var(--ek-surface)] border border-[var(--ek-border)] text-[var(--ek-text)] text-base focus:outline-none focus:ring-2 focus:ring-[var(--ek-primary)] cursor-pointer"
           value=${statusFilter.value}
           onChange=${(e) => { statusFilter.value = e.target.value; }}
         >
@@ -284,7 +284,7 @@ export function Track() {
           `)}
         </select>
         <select
-          class="h-10 px-3 rounded-lg bg-[var(--ek-surface)] border border-[var(--ek-border)] text-[var(--ek-text)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ek-primary)] cursor-pointer"
+          class="h-12 px-3 rounded-lg bg-[var(--ek-surface)] border border-[var(--ek-border)] text-[var(--ek-text)] text-base focus:outline-none focus:ring-2 focus:ring-[var(--ek-primary)] cursor-pointer"
           value=${sortBy.value}
           onChange=${(e) => { sortBy.value = e.target.value; }}
         >
@@ -292,7 +292,7 @@ export function Track() {
           <option value="name">Sort by Name</option>
           <option value="status">Sort by Status</option>
         </select>
-        <span class="text-xs text-[var(--ek-text-muted)]">
+        <span class="text-sm text-[var(--ek-text-muted)]">
           Showing ${tracked.length} of ${allTracked.length} brokers
         </span>
       </div>
@@ -317,11 +317,11 @@ export function Track() {
 
       ${/* ── Campaign Management Section (D-09, D-10, D-11) ── */''}
       <div class="rounded-xl bg-[var(--ek-surface-alt)] border border-[var(--ek-border)] p-6 mt-6">
-        <h3 class="text-sm font-semibold text-[var(--ek-text)] mb-2">Campaign Management</h3>
+        <h3 class="text-base font-semibold text-[var(--ek-text)] mb-3">Campaign Management</h3>
         ${campaign.value.settings?.ended
-          ? html`<p class="text-sm text-[var(--ek-text-muted)]">Campaign ended on ${new Date(campaign.value.settings.endedAt).toLocaleDateString()}. Your campaign data is preserved for your records.</p>`
+          ? html`<p class="text-base text-[var(--ek-text-muted)]">Campaign ended on ${new Date(campaign.value.settings.endedAt).toLocaleDateString()}. Your campaign data is preserved for your records.</p>`
           : html`
-            <p class="text-sm text-[var(--ek-text-muted)] mb-3">
+            <p class="text-base text-[var(--ek-text-muted)] mb-4">
               End your campaign when you are done sending requests. This will delete your temporary email address.
             </p>
             <button
@@ -339,8 +339,8 @@ export function Track() {
       ${showEndCampaignDialog.value && html`
         <div class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick=${(e) => { if (e.target === e.currentTarget && !endingCampaign.value) showEndCampaignDialog.value = false; }}>
           <div class="max-w-md bg-[var(--ek-surface-alt)] rounded-xl border border-[var(--ek-border)] p-6 shadow-2xl space-y-4">
-            <h3 class="text-lg font-semibold text-[var(--ek-text)]">End Campaign?</h3>
-            <p class="text-sm text-[var(--ek-text-muted)]">
+            <h3 class="text-xl font-semibold text-[var(--ek-text)]">End Campaign?</h3>
+            <p class="text-base text-[var(--ek-text-muted)]">
               This will delete your temporary email address. You won't be able to send more requests or receive broker replies. Continue?
             </p>
             <div class="flex gap-3 justify-end">
@@ -377,9 +377,9 @@ function StatCard({ label, count, color }) {
   const c = colorMap[color] || colorMap.sky;
 
   return html`
-    <div class="rounded-lg ${c.bg} border ${c.border} p-4 text-center">
-      <div class="text-2xl font-bold ${c.text}">${count}</div>
-      <div class="text-xs text-[var(--ek-text-muted)] mt-1">${label}</div>
+    <div class="rounded-lg ${c.bg} border ${c.border} p-5 text-center">
+      <div class="text-3xl font-bold ${c.text}">${count}</div>
+      <div class="text-sm text-[var(--ek-text-muted)] mt-1">${label}</div>
     </div>
   `;
 }
@@ -413,8 +413,8 @@ function BrokerStatusRow({ broker }) {
         ${/* Broker name + status badge */''}
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2">
-            <span class="font-medium text-sm text-[var(--ek-text)] truncate">${broker.name}</span>
-            <span class="text-xs px-1.5 py-0.5 rounded ${colors.bg} ${colors.text} font-medium flex-shrink-0">
+            <span class="font-medium text-base text-[var(--ek-text)] truncate">${broker.name}</span>
+            <span class="text-sm px-2 py-0.5 rounded ${colors.bg} ${colors.text} font-medium flex-shrink-0">
               ${STATUS_LABELS[currentStatus] || currentStatus}
             </span>
           </div>

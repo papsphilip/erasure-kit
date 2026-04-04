@@ -15,7 +15,7 @@ const STEPS = [
  */
 export function Stepper() {
   return html`
-    <nav class="sticky top-14 z-20 flex items-center justify-center gap-2 py-3 px-4 bg-[var(--ek-surface-alt)] border-b border-[var(--ek-border)]" aria-label="Progress">
+    <nav class="sticky top-14 z-20 flex items-center justify-center gap-3 py-4 px-4 bg-[var(--ek-surface-alt)] border-b border-[var(--ek-border)]" aria-label="Progress">
       ${STEPS.map((step, i) => {
         const isCurrent = currentPage.value === step.id;
         const isCompleted = completedSteps.value.has(step.id);
@@ -30,7 +30,7 @@ export function Stepper() {
             class="flex items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ek-surface-alt)] rounded-lg"
             aria-current=${isCurrent ? 'step' : undefined}
           >
-            <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium border-2 transition-colors duration-150 ${
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium border-2 transition-colors duration-150 ${
               isCurrent
                 ? 'bg-[var(--ek-primary)] text-white border-[var(--ek-primary)]'
                 : isCompleted
@@ -42,7 +42,7 @@ export function Stepper() {
                 : step.number
               }
             </div>
-            <span class="hidden sm:inline text-sm font-medium ${
+            <span class="hidden sm:inline text-base font-medium ${
               isCurrent || isCompleted
                 ? 'text-[var(--ek-primary)]'
                 : 'text-[var(--ek-text-muted)]'

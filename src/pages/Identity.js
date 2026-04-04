@@ -107,7 +107,7 @@ function XIcon() {
 
 // ── Input Class Helpers ───────────────────────────────────────────────────────
 
-const BASE_INPUT_CLASSES = 'w-full h-12 px-4 rounded-lg bg-[var(--ek-surface)] border text-[var(--ek-text)] placeholder:text-[var(--ek-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ek-primary)]';
+const BASE_INPUT_CLASSES = 'w-full h-14 px-4 rounded-lg bg-[var(--ek-surface)] border text-base text-[var(--ek-text)] placeholder:text-[var(--ek-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ek-primary)]';
 const BORDER_NORMAL = 'border-[var(--ek-border)]';
 const BORDER_ERROR = 'border-[var(--ek-danger)]';
 
@@ -125,22 +125,22 @@ export function Identity() {
     identity.fullName.trim() !== '' && hasAtLeastOneValidEmail();
 
   return html`
-    <div class="max-w-2xl mx-auto px-4 py-8">
-      <div class="rounded-xl bg-[var(--ek-surface-alt)] shadow-lg p-6 space-y-6">
+    <div class="max-w-2xl mx-auto px-4 py-10">
+      <div class="rounded-xl bg-[var(--ek-surface-alt)] shadow-lg p-8 space-y-8">
 
         ${/* ── Card Header ─────────────────────────────────────── */''}
         <div>
-          <h2 class="text-xl font-semibold text-[var(--ek-text)]">Your Information</h2>
-          <div class="flex items-center gap-1.5 mt-1">
+          <h2 class="text-2xl font-semibold text-[var(--ek-text)]">Your Information</h2>
+          <div class="flex items-center gap-2 mt-2">
             <${LockIcon} />
-            <span class="text-xs text-[var(--ek-text-muted)]">Your data never leaves this device</span>
+            <span class="text-sm text-[var(--ek-text-muted)]">Your data never leaves this device</span>
           </div>
         </div>
 
         ${/* ── Full Name ───────────────────────────────────────── */''}
-        <div class="space-y-1.5">
-          <label class="block text-sm font-medium text-[var(--ek-text)]">Full Name</label>
-          <p class="text-xs text-[var(--ek-text-muted)]">Included in erasure requests to identify your records</p>
+        <div class="space-y-2">
+          <label class="block text-base font-medium text-[var(--ek-text)]">Full Name</label>
+          <p class="text-sm text-[var(--ek-text-muted)]">Included in erasure requests to identify your records</p>
           <input
             type="text"
             class="${BASE_INPUT_CLASSES} ${errs.fullName ? BORDER_ERROR : BORDER_NORMAL}"
@@ -150,14 +150,14 @@ export function Identity() {
             onBlur=${handleNameBlur}
           />
           ${errs.fullName && html`
-            <p class="text-xs text-[var(--ek-danger)] mt-1">${errs.fullName}</p>
+            <p class="text-sm text-[var(--ek-danger)] mt-1">${errs.fullName}</p>
           `}
         </div>
 
         ${/* ── Email Addresses ─────────────────────────────────── */''}
-        <div class="space-y-1.5">
-          <label class="block text-sm font-medium text-[var(--ek-text)]">Email Addresses to Erase</label>
-          <p class="text-xs text-[var(--ek-text-muted)]">Brokers erase data linked to these addresses</p>
+        <div class="space-y-2">
+          <label class="block text-base font-medium text-[var(--ek-text)]">Email Addresses to Erase</label>
+          <p class="text-sm text-[var(--ek-text-muted)]">Brokers erase data linked to these addresses</p>
           <div class="space-y-2">
             ${emails.map(
               (email, index) => html`
@@ -174,7 +174,7 @@ export function Identity() {
                     ${emails.length > 1 && html`
                       <button
                         type="button"
-                        class="flex-shrink-0 w-10 h-12 flex items-center justify-center rounded-lg text-[var(--ek-text-muted)] hover:text-[var(--ek-danger)] hover:bg-[var(--ek-surface)] transition-colors duration-150"
+                        class="flex-shrink-0 w-10 h-14 flex items-center justify-center rounded-lg text-[var(--ek-text-muted)] hover:text-[var(--ek-danger)] hover:bg-[var(--ek-surface)] transition-colors duration-150"
                         onClick=${() => handleRemoveEmail(index)}
                         aria-label="Remove email"
                       >
@@ -183,7 +183,7 @@ export function Identity() {
                     `}
                   </div>
                   ${errs[`email-${index}`] && html`
-                    <p class="text-xs text-[var(--ek-danger)] mt-1">${errs[`email-${index}`]}</p>
+                    <p class="text-sm text-[var(--ek-danger)] mt-1">${errs[`email-${index}`]}</p>
                   `}
                 </div>
               `,
@@ -191,13 +191,13 @@ export function Identity() {
           </div>
           <button
             type="button"
-            class="text-sm text-[var(--ek-primary)] hover:underline mt-1"
+            class="text-base text-[var(--ek-primary)] hover:underline mt-2"
             onClick=${addEmail}
           >
             + Add email
           </button>
           ${emails.length >= 10 && html`
-            <p class="text-xs text-[var(--ek-text-muted)] italic mt-1">Most users need fewer than 10 addresses</p>
+            <p class="text-sm text-[var(--ek-text-muted)] italic mt-1">Most users need fewer than 10 addresses</p>
           `}
         </div>
 
@@ -205,7 +205,7 @@ export function Identity() {
         <div>
           <button
             type="button"
-            class="flex items-center gap-1.5 text-sm text-[var(--ek-text-muted)] hover:text-[var(--ek-primary)] transition-colors duration-150"
+            class="flex items-center gap-2 text-base text-[var(--ek-text-muted)] hover:text-[var(--ek-primary)] transition-colors duration-150"
             onClick=${() => { showOptional.value = !showOptional.value; }}
           >
             <${ChevronIcon} open=${showOptional.value} />
@@ -213,9 +213,9 @@ export function Identity() {
           </button>
 
           ${showOptional.value && html`
-            <div class="mt-4 space-y-4 pl-1">
-              <div class="space-y-1.5">
-                <label class="block text-sm font-medium text-[var(--ek-text)]">Phone Number</label>
+            <div class="mt-4 space-y-5 pl-1">
+              <div class="space-y-2">
+                <label class="block text-base font-medium text-[var(--ek-text)]">Phone Number</label>
                 <input
                   type="tel"
                   class="${BASE_INPUT_CLASSES} ${BORDER_NORMAL}"
@@ -224,8 +224,8 @@ export function Identity() {
                   onInput=${(e) => updateIdentity('phone', e.target.value)}
                 />
               </div>
-              <div class="space-y-1.5">
-                <label class="block text-sm font-medium text-[var(--ek-text)]">Postal Address</label>
+              <div class="space-y-2">
+                <label class="block text-base font-medium text-[var(--ek-text)]">Postal Address</label>
                 <textarea
                   rows="3"
                   class="${BASE_INPUT_CLASSES} h-auto py-3 ${BORDER_NORMAL}"
@@ -241,7 +241,7 @@ export function Identity() {
         ${/* ── Continue Button ─────────────────────────────────── */''}
         <button
           type="button"
-          class="w-full h-12 rounded-lg font-semibold text-white transition-all duration-150 ${
+          class="w-full h-14 rounded-lg text-lg font-semibold text-white transition-all duration-150 ${
             canContinue
               ? 'bg-[var(--ek-primary)] hover:brightness-90 active:brightness-85 cursor-pointer'
               : 'bg-[var(--ek-primary)]/40 cursor-not-allowed'

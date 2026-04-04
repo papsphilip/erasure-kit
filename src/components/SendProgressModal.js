@@ -74,10 +74,10 @@ export function SendProgressModal({ visible, progress, rateLimitInfo, isComplete
 
         ${isSending && progress && html`
           ${/* ── Sending State ── */''}
-          <h3 class="text-xl font-semibold text-[var(--ek-text)] text-center mb-6">Sending Requests...</h3>
+          <h3 class="text-2xl font-semibold text-[var(--ek-text)] text-center mb-6">Sending Requests...</h3>
 
           ${/* Progress bar */''}
-          <div class="w-full h-3 bg-[var(--ek-surface)] rounded-full overflow-hidden">
+          <div class="w-full h-4 bg-[var(--ek-surface)] rounded-full overflow-hidden">
             <div
               class="h-full bg-[var(--ek-primary)] rounded-full transition-all duration-300"
               style="width: ${Math.round((progress.current / progress.total) * 100)}%"
@@ -85,21 +85,21 @@ export function SendProgressModal({ visible, progress, rateLimitInfo, isComplete
           </div>
 
           ${/* Current broker name */''}
-          <p class="text-sm text-[var(--ek-text-muted)] truncate mt-3 text-center">
+          <p class="text-base text-[var(--ek-text-muted)] truncate mt-4 text-center">
             ${progress.broker?.name || 'Preparing...'}
           </p>
 
           ${/* Stats row */''}
-          <div class="flex justify-between mt-4">
-            <span class="text-sm text-emerald-500 font-medium">Sent: ${progress.sent || 0}</span>
+          <div class="flex justify-between mt-5">
+            <span class="text-base text-emerald-500 font-medium">Sent: ${progress.sent || 0}</span>
             ${(progress.failed || 0) > 0 && html`
-              <span class="text-sm text-red-500 font-medium">Failed: ${progress.failed}</span>
+              <span class="text-base text-red-500 font-medium">Failed: ${progress.failed}</span>
             `}
-            <span class="text-sm text-[var(--ek-text-muted)]">Remaining: ${progress.total - progress.current}</span>
+            <span class="text-base text-[var(--ek-text-muted)]">Remaining: ${progress.total - progress.current}</span>
           </div>
 
           ${/* Counter */''}
-          <p class="text-sm text-center text-[var(--ek-text-muted)] mt-2">
+          <p class="text-base text-center text-[var(--ek-text-muted)] mt-2">
             ${progress.current} of ${progress.total}
           </p>
 
@@ -117,11 +117,11 @@ export function SendProgressModal({ visible, progress, rateLimitInfo, isComplete
           ${/* ── Rate Limited State (D-05) ── */''}
           <div class="text-center">
             <${ClockIcon} />
-            <h3 class="text-xl font-semibold text-amber-500 mt-4 mb-2">Rate Limited</h3>
-            <p class="text-lg text-[var(--ek-text)] font-mono mb-2">
+            <h3 class="text-2xl font-semibold text-amber-500 mt-4 mb-2">Rate Limited</h3>
+            <p class="text-xl text-[var(--ek-text)] font-mono mb-2">
               Resuming in ${countdown.value}s...
             </p>
-            <p class="text-sm text-[var(--ek-text-muted)]">
+            <p class="text-base text-[var(--ek-text-muted)]">
               Paused on: ${rateLimitInfo.broker?.name || 'Unknown'}
             </p>
           </div>
@@ -140,8 +140,8 @@ export function SendProgressModal({ visible, progress, rateLimitInfo, isComplete
           ${/* ── Complete State (D-03) ── */''}
           <div class="text-center">
             <${CheckCircleIcon} />
-            <h3 class="text-xl font-semibold text-[var(--ek-text)] mt-4 mb-2">Sending Complete</h3>
-            <p class="text-sm text-[var(--ek-text-muted)]">
+            <h3 class="text-2xl font-semibold text-[var(--ek-text)] mt-4 mb-2">Sending Complete</h3>
+            <p class="text-base text-[var(--ek-text-muted)]">
               ${result.sent} sent${result.failed > 0 ? `, ${result.failed} failed` : ''}
             </p>
           </div>
