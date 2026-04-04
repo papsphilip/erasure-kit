@@ -84,7 +84,7 @@ Requirements for the relay-based sending system. Each maps to roadmap phases 5-1
 
 ### Status Tracking
 
-- [ ] **STAT-01**: Each broker has a tracked status: not selected -> selected -> awaiting response -> confirmed / rejected / escalated / overdue
+- [x] **STAT-01**: Each broker has a tracked status: not selected -> selected -> awaiting response -> confirmed / rejected / escalated / overdue
 - [x] **STAT-02**: App calculates "one calendar month" deadline from send date using proper date arithmetic (not naive +30 days)
 - [x] **STAT-03**: App flags brokers as overdue when they exceed the calendar-month deadline
 - [x] **STAT-04**: Dashboard shows aggregate stats: total brokers, selected, sent, awaiting, confirmed, rejected, overdue *(infrastructure built in v1.0 Phase 5)*
@@ -177,7 +177,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | E2EE-02 | Phase 5: Relay Infrastructure and E2E Encryption | Pending |
 | RELAY-04 | Phase 6: Frontend Sending Integration | Complete |
 | RELAY-05 | Phase 6: Frontend Sending Integration | Complete |
-| STAT-01 | Phase 6: Frontend Sending Integration | Pending |
+| STAT-01 | Phase 6: Frontend Sending Integration | Complete |
 | STAT-02 | Phase 6: Frontend Sending Integration | Complete |
 | STAT-03 | Phase 6: Frontend Sending Integration | Complete |
 | STAT-04 | Phase 6: Frontend Sending Integration | Complete |
