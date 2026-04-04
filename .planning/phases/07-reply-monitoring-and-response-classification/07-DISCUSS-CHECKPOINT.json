@@ -1,0 +1,21 @@
+{
+  "phase": "7",
+  "phase_name": "Reply Monitoring and Response Classification",
+  "timestamp": "2026-04-04T20:35:00.000Z",
+  "areas_completed": ["Reply storage and retrieval"],
+  "areas_remaining": ["Response classification", "Reply display UX", "Status auto-update logic"],
+  "decisions": {
+    "Reply storage and retrieval": [
+      {"question": "How should the frontend check for new broker replies?", "answer": "Auto-check once per day on app open, plus manual refresh button for on-demand checks", "options_presented": ["Manual refresh button", "Auto-poll on page visit", "Auto-poll + manual refresh"]},
+      {"question": "Should broker reply content be encrypted at rest in KV?", "answer": "Encrypt replies in KV — Worker encrypts with campaign's public key before storing. Consistent with E2E model.", "options_presented": ["Encrypt replies in KV", "Store replies plaintext in KV"]},
+      {"question": "How should the Worker receive inbound emails?", "answer": "Email Worker handler — native Cloudflare email() handler in the same Worker project", "options_presented": ["Email Worker handler", "Webhook forwarding"]},
+      {"question": "How should replies be keyed in KV?", "answer": "Per-address reply list — KV key replies:{tempSlug} with JSON array of encrypted reply objects", "options_presented": ["Per-address reply list", "Per-reply individual keys", "You decide"]}
+    ],
+    "Response classification": [
+      {"question": "How should broker responses be classified?", "answer": "Keyword/pattern matching — rule-based classification using keyword lists and regex patterns per category. Runs in-browser after decryption. No AI dependency.", "options_presented": ["Keyword/pattern matching", "LLM-assisted classification", "Hybrid: rules first, LLM fallback"]}
+    ]
+  },
+  "deferred_ideas": [],
+  "canonical_refs": [],
+  "resume_note": "Classification approach decided (keyword/pattern matching in browser). Next question: where classification runs (browser vs Worker) — user wanted to clarify before answering. Then continue with Reply display UX and Status auto-update logic."
+}
