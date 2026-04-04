@@ -113,8 +113,8 @@ Plans:
 **Plans:** 3 plans
 Plans:
 - [x] 05-01-PLAN.md -- Cloudflare Worker project scaffold, POST /send + DELETE /address routes, Resend API client, rate limiter, CORS, tests
-- [ ] 05-02-PLAN.md -- Browser crypto module (RSA-OAEP + AES-256-GCM hybrid encryption), campaign schema v3 with encryption field
-- [ ] 05-03-PLAN.md -- Deployment: DNS/Resend/KV setup, wrangler deploy, live email verification
+- [x] 05-02-PLAN.md -- Browser crypto module (RSA-OAEP + AES-256-GCM hybrid encryption), campaign schema v3 with encryption field
+- [x] 05-03-PLAN.md -- Deployment: DNS/Resend/KV setup, wrangler deploy, live email verification
 
 ### Phase 6: Frontend Sending Integration
 **Goal**: Users can click "Send All" to dispatch GDPR erasure requests to all selected brokers through the relay, with the existing status tracking and notification systems reflecting real-time send progress
