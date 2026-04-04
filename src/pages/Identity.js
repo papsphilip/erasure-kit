@@ -1,7 +1,16 @@
 import { html } from 'htm/preact';
 import { signal } from '@preact/signals';
-import { campaign, updateIdentity, updateIdentityEmail, addEmail, removeEmail } from '../lib/campaign.js';
+import { campaign, updateIdentity, updateIdentityEmail, addEmail, removeEmail, ensureCampaignKeys } from '../lib/campaign.js';
 import { navigateTo, markStepComplete } from '../lib/router.js';
+
+// Auto-generate encryption keys if missing (for pre-v2 campaigns)
+let _keysEnsured = false;
+function ensureKeys() {
+  if (!_keysEnsured) {
+    _keysEnsured = true;
+    ensureCampaignKeys();
+  }
+}
 
 // ── Local UI State (not persisted to campaign) ────────────────────────────────
 
@@ -118,6 +127,7 @@ const BORDER_ERROR = 'border-[var(--ek-danger)]';
  * Writes directly to the campaign signal (triggers auto-save via Plan 01).
  */
 export function Identity() {
+  ensureKeys();
   const identity = campaign.value.identity;
   const errs = errors.value;
   const emails = identity.emails;
@@ -126,6 +136,12 @@ export function Identity() {
 
   return html`
     <div class="max-w-2xl mx-auto px-4 py-10">
+      ${campaign.value.tempEmail && html`
+        <div class="rounded-lg bg-[var(--ek-surface-alt)] border border-[var(--ek-border)] px-4 py-3 mb-4 flex items-center justify-center gap-2">
+          <span class="text-xs text-[var(--ek-text-muted)]">Sending from</span>
+          <span class="text-sm font-mono font-semibold text-[var(--ek-primary)]">${campaign.value.tempEmail}</span>
+        </div>
+      `}
       <div class="rounded-xl bg-[var(--ek-surface-alt)] shadow-lg p-8 space-y-8">
 
         ${/* ── Card Header ─────────────────────────────────────── */''}

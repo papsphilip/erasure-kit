@@ -128,7 +128,7 @@ function handleRetryAllFailed() {
   }
 }
 
-/** End the campaign -- delete temp address and mark ended (D-09, D-10, D-11) */
+/** End the campaign -- delete temp address, mark ended, return to welcome (D-09, D-10, D-11) */
 async function handleEndCampaign() {
   endingCampaign.value = true;
   const result = await endCampaign();
@@ -139,6 +139,7 @@ async function handleEndCampaign() {
   } else {
     addNotification({ type: 'warning', message: 'Campaign ended locally. Temporary address could not be deleted -- it will expire automatically.' });
   }
+  navigateTo('welcome');
 }
 
 // ── SVG Icons ───────────────────────────────────────────────────────────────
@@ -318,6 +319,12 @@ export function Track() {
       ${/* ── Campaign Management Section (D-09, D-10, D-11) ── */''}
       <div class="rounded-xl bg-[var(--ek-surface-alt)] border border-[var(--ek-border)] p-6 mt-6">
         <h3 class="text-base font-semibold text-[var(--ek-text)] mb-3">Campaign Management</h3>
+        ${campaign.value.tempEmail && !campaign.value.settings?.ended && html`
+          <div class="rounded-lg bg-[var(--ek-surface)] border border-[var(--ek-border)] px-4 py-3 mb-4 flex items-center gap-2">
+            <span class="text-xs text-[var(--ek-text-muted)]">Temp address:</span>
+            <span class="text-sm font-mono font-semibold text-[var(--ek-primary)]">${campaign.value.tempEmail}</span>
+          </div>
+        `}
         ${campaign.value.settings?.ended
           ? html`<p class="text-base text-[var(--ek-text-muted)]">Campaign ended on ${new Date(campaign.value.settings.endedAt).toLocaleDateString()}. Your campaign data is preserved for your records.</p>`
           : html`

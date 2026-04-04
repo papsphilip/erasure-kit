@@ -7,6 +7,7 @@ import {
   selectBrokers,
   deselectBrokers,
   deselectAllBrokers,
+  ensureCampaignKeys,
 } from '../lib/campaign.js';
 import { navigateTo, markStepComplete } from '../lib/router.js';
 import { TemplateModal, openModal } from '../components/TemplateModal.js';
@@ -210,8 +211,9 @@ function handleRowClick(broker) {
   openModal(broker.id, filteredBrokers.value);
 }
 
-/** Show the send confirmation dialog (D-12) */
-function handleSendAllClick() {
+/** Show the send confirmation dialog (D-12). Auto-generates encryption keys if missing. */
+async function handleSendAllClick() {
+  await ensureCampaignKeys();
   showSendConfirm.value = true;
 }
 
@@ -415,7 +417,14 @@ export function Brokers() {
 
         ${/* ── Header ── */''}
         <div class="flex items-center justify-between">
-          <h2 class="text-2xl font-semibold text-[var(--ek-text)]">Select Brokers</h2>
+          <div>
+            <h2 class="text-2xl font-semibold text-[var(--ek-text)]">Select Brokers</h2>
+            ${campaign.value.tempEmail && html`
+              <p class="text-xs text-[var(--ek-text-muted)] mt-1">
+                Sending from <span class="font-mono text-[var(--ek-primary)] font-medium">${campaign.value.tempEmail}</span>
+              </p>
+            `}
+          </div>
           ${selCount > 0 && html`
             <button
               type="button"
@@ -533,9 +542,7 @@ export function Brokers() {
               <span>${selCount} selected${sent > 0 ? html` \u00B7 <span class="text-emerald-500">${sent} sent</span>` : ''}</span>
               ${campaign.value.settings?.ended
                 ? html`<span class="text-sm text-[var(--ek-text-muted)] italic">Campaign ended</span>`
-                : !campaign.value.encryption
-                  ? html`<span class="text-sm text-[var(--ek-text-muted)] italic">Start a new campaign for automated sending</span>`
-                  : unsent > 0 && hasIdentity && html`
+                : unsent > 0 && hasIdentity && html`
                     <button
                       type="button"
                       class="text-sm text-[var(--ek-primary)] hover:underline font-medium"

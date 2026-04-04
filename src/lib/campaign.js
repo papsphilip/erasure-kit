@@ -315,6 +315,30 @@ export function generateTempSlug() {
   return Array.from(array, (byte) => chars[byte % chars.length]).join('');
 }
 
+// ── Ensure Encryption Keys ──────────────────────────────────────────────────
+
+/**
+ * Ensure the current campaign has encryption keys and a temp email address.
+ * For campaigns loaded from localStorage that predate the relay feature (v1.0),
+ * this auto-generates the missing keys without resetting the campaign.
+ * @returns {Promise<boolean>} true if keys were generated, false if already present
+ */
+export async function ensureCampaignKeys() {
+  if (campaign.value.encryption && campaign.value.tempEmail) {
+    return false;
+  }
+  const { publicKeyJwk, privateKeyJwk } = await generateCampaignKeyPair();
+  const tempSlug = generateTempSlug();
+  const tempEmail = campaign.value.tempEmail || `${tempSlug}@erasurekit.uk`;
+  campaign.value = {
+    ...campaign.value,
+    updatedAt: new Date().toISOString(),
+    tempEmail,
+    encryption: campaign.value.encryption || { publicKeyJwk, privateKeyJwk },
+  };
+  return true;
+}
+
 // ── Campaign Reset ─────────────────────────────────────────────────────────────
 
 /**
