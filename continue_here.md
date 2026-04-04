@@ -1,8 +1,8 @@
 ---
 scope: tools/erasure-kit
 status: paused
-phase: "Phase 5 complete — relay deployed at api.erasurekit.uk, ready for Phase 6"
-gsd_command: "gsd:discuss-phase 6"
+phase: "Phase 6 complete — frontend sending integration verified, ready for Phase 7"
+gsd_command: "gsd:discuss-phase 7"
 last_updated: "2026-04-04"
 ---
 
