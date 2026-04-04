@@ -45,45 +45,66 @@ export function About() {
         <li><strong class="text-[var(--ek-text)]">Step 5: Track responses.</strong> Monitor which brokers have responded, track 30-day compliance deadlines, and flag overdue organisations for escalation to data protection authorities.</li>
       </ul>
 
-      <!-- Section 4: Privacy First -->
+      <!-- Section 4: The Email Relay -->
+      <h2 class="text-lg font-semibold mt-8 mb-3 text-[var(--ek-text)]">How Email Sending Works</h2>
+      <p class="text-sm text-[var(--ek-text-muted)] leading-relaxed mb-3">
+        ErasureKit never exposes your real email address to data brokers. Instead, the app creates a <strong class="text-[var(--ek-text)]">temporary @erasurekit.uk address</strong> for each campaign. All erasure requests are sent from this disposable address through a secure relay.
+      </p>
+      <p class="text-sm text-[var(--ek-text-muted)] leading-relaxed mb-3">
+        The relay architecture works as follows:
+      </p>
+      <ul class="list-disc list-inside space-y-1 text-sm text-[var(--ek-text-muted)] mb-3">
+        <li><strong class="text-[var(--ek-text)]">Encryption in the browser.</strong> Before any email leaves your device, the body is encrypted using RSA-OAEP + AES-256-GCM hybrid encryption via the Web Crypto API. Only your browser holds the private key.</li>
+        <li><strong class="text-[var(--ek-text)]">Cloudflare Worker relay.</strong> The encrypted payload is sent to a Cloudflare Worker at api.erasurekit.uk. The Worker decrypts the email body and forwards it to the broker via the Resend email API.</li>
+        <li><strong class="text-[var(--ek-text)]">End-to-end encrypted content.</strong> The relay operator cannot read your email content at rest -- encryption keys exist only in your browser session. The Worker only holds the decrypted content in memory for the instant it takes to send.</li>
+        <li><strong class="text-[var(--ek-text)]">Cloudflare Email Routing.</strong> Broker replies to your temp address are received by Cloudflare Email Routing (free, unlimited) and stored encrypted in Cloudflare KV for retrieval.</li>
+        <li><strong class="text-[var(--ek-text)]">Temp address cleanup.</strong> When your campaign is complete, you can delete the temp address. It is also automatically expired after 90 days via KV TTL.</li>
+      </ul>
+      <p class="text-sm text-[var(--ek-text-muted)] leading-relaxed mb-3">
+        The relay infrastructure runs entirely on Cloudflare's free tier: Workers (100K requests/day), KV (100K reads/day), Email Routing (unlimited), and Resend (100 emails/day, 3,000/month on the free plan).
+      </p>
+
+      <!-- Section 5: Privacy First -->
       <h2 class="text-lg font-semibold mt-8 mb-3 text-[var(--ek-text)]">Privacy First</h2>
       <p class="text-sm text-[var(--ek-text-muted)] leading-relaxed mb-3">
-        ErasureKit is built with a strict privacy-first philosophy. It would be counterproductive to use a tool that protects your data rights while simultaneously collecting your data. Here is exactly how the app handles your information:
+        It would be counterproductive to use a tool that protects your data rights while simultaneously collecting your data. Here is exactly how the app handles your information:
       </p>
       <ul class="list-disc list-inside space-y-1 text-sm text-[var(--ek-text-muted)]">
-        <li><strong class="text-[var(--ek-text)]">Everything runs in the browser.</strong> There is no server, no backend, and no API calls to ErasureKit servers. The app is a static HTML file with JavaScript that executes entirely on your device.</li>
-        <li><strong class="text-[var(--ek-text)]">No tracking of any kind.</strong> No cookies, no analytics scripts, no telemetry, no usage metrics. The app does not know who you are, how often you use it, or what you do with it.</li>
-        <li><strong class="text-[var(--ek-text)]">Local storage only.</strong> Your personal data (name, email addresses) is stored in your browser's local storage. It never leaves your device unless you explicitly export it.</li>
-        <li><strong class="text-[var(--ek-text)]">Save and load campaigns.</strong> You can save your campaign progress as a JSON file on your own device and load it later. This file stays on your computer -- ErasureKit has no access to it once saved.</li>
-        <li><strong class="text-[var(--ek-text)]">Minimal network activity.</strong> The only outbound calls are to the erasurekit.uk relay when sending erasure emails. All email content is end-to-end encrypted -- the relay cannot read your messages.</li>
-        <li><strong class="text-[var(--ek-text)]">No accounts or sign-up.</strong> There is no registration, no email verification, and no user database. You open the app and start using it.</li>
+        <li><strong class="text-[var(--ek-text)]">Everything runs in the browser.</strong> The app is a static HTML file with JavaScript that executes entirely on your device. There is no ErasureKit backend or database.</li>
+        <li><strong class="text-[var(--ek-text)]">No tracking of any kind.</strong> No cookies, no analytics, no telemetry. The app does not know who you are or how you use it.</li>
+        <li><strong class="text-[var(--ek-text)]">Local storage only.</strong> Your personal data (name, email addresses, encryption keys) is stored in your browser's local storage and never leaves your device unless you explicitly export a campaign file.</li>
+        <li><strong class="text-[var(--ek-text)]">End-to-end encrypted sending.</strong> The only network calls are to the erasurekit.uk relay. Email content is encrypted before it leaves your browser -- the relay cannot read your messages.</li>
+        <li><strong class="text-[var(--ek-text)]">No accounts or sign-up.</strong> No registration, no email verification, no user database. You open the app and start using it.</li>
       </ul>
 
-      <!-- Section 5: The Broker Database -->
+      <!-- Section 6: The Broker Database -->
       <h2 class="text-lg font-semibold mt-8 mb-3 text-[var(--ek-text)]">The Broker Database</h2>
       <p class="text-sm text-[var(--ek-text-muted)] leading-relaxed mb-3">
-        ErasureKit ships with a community-maintained database of <strong class="text-[var(--ek-text)]">169+ data brokers</strong> across Europe. These brokers span multiple categories including people search engines, marketing data providers, credit reporting agencies, data aggregators, lead generation platforms, and more.
+        ErasureKit ships with a community-maintained database of <strong class="text-[var(--ek-text)]">169+ data brokers</strong> across Europe, the UK, and the US. These brokers span multiple categories including people search engines, marketing data providers, credit reporting agencies, data aggregators, and lead generation platforms.
       </p>
       <p class="text-sm text-[var(--ek-text-muted)] leading-relaxed mb-3">
-        Brokers are categorised by region -- EU-wide, United Kingdom, DACH (Germany, Austria, Switzerland), and Nordics -- so you can target the organisations most likely to hold your data based on where you live and where you have been active online.
+        The database was compiled from publicly available open-source lists and community research. Key sources and prior art that informed this project include:
       </p>
+      <ul class="list-disc list-inside space-y-1 text-sm text-[var(--ek-text-muted)] mb-3">
+        <li><a href="https://www.datarequests.org/blog/sample-letter-gdpr-erasure-request/" class="text-[var(--ek-primary)] hover:underline" target="_blank" rel="noopener">datarequests.org</a> -- CC0-licensed sample erasure letter templates that informed our GDPR email language</li>
+        <li><a href="https://github.com/privacybot-berkeley/privacybot" class="text-[var(--ek-primary)] hover:underline" target="_blank" rel="noopener">PrivacyBot</a> (UC Berkeley / Consumer Reports) -- pioneering open-source erasure automation via Gmail OAuth</li>
+        <li><a href="https://github.com/AnalogJ/justvanish" class="text-[var(--ek-primary)] hover:underline" target="_blank" rel="noopener">JustVanish</a> (AnalogJ) -- Go-based erasure CLI with SMTP integration</li>
+        <li><a href="https://github.com/digisamroc/eraser" class="text-[var(--ek-primary)] hover:underline" target="_blank" rel="noopener">Eraser</a> (digisamroc) -- self-hosted erasure tool with multi-provider SMTP support</li>
+      </ul>
       <p class="text-sm text-[var(--ek-text-muted)] leading-relaxed mb-3">
-        The broker database is stored as a separate JSON file that is loaded at runtime. This means it can be <strong class="text-[var(--ek-text)]">updated independently of the app itself</strong>. The community can add new brokers, correct contact details, or flag brokers that have shut down without requiring a new app release.
-      </p>
-      <p class="text-sm text-[var(--ek-text-muted)] leading-relaxed mb-3">
-        Contributions are welcome. If you know of a data broker not yet in the database, or if you find incorrect contact information, you can submit updates via GitHub.
+        The broker database is stored as a separate JSON file loaded at runtime, so it can be <strong class="text-[var(--ek-text)]">updated independently of the app</strong>. Contributions are welcome -- if you know of a broker not yet listed, or find incorrect contact information, you can submit updates via GitHub.
       </p>
 
-      <!-- Section 6: Open Source -->
-      <h2 class="text-lg font-semibold mt-8 mb-3 text-[var(--ek-text)]">Open Source</h2>
+      <!-- Section 7: Open Source & Licensing -->
+      <h2 class="text-lg font-semibold mt-8 mb-3 text-[var(--ek-text)]">Open Source & Licensing</h2>
       <p class="text-sm text-[var(--ek-text-muted)] leading-relaxed mb-3">
-        ErasureKit is <strong class="text-[var(--ek-text)]">free software</strong> released under an open-source licence. The source code is publicly available on GitHub, and the project welcomes contributions of all kinds.
+        ErasureKit is <strong class="text-[var(--ek-text)]">free and open-source software</strong> released under the <strong class="text-[var(--ek-text)]">MIT License</strong>. You can use, copy, modify, merge, publish, distribute, sublicense, and sell copies of this software freely. The full license text is included in the source repository.
       </p>
       <p class="text-sm text-[var(--ek-text-muted)] leading-relaxed mb-3">
-        There are many ways to contribute: add new data brokers to the database, improve email templates, translate the app into other languages, report bugs, suggest features, or improve the code. Every contribution helps more people exercise their data rights.
+        The source code is publicly available at <a href="https://github.com/papsphilip/erasure-kit" class="text-[var(--ek-primary)] hover:underline" target="_blank" rel="noopener">github.com/papsphilip/erasure-kit</a>. The project welcomes contributions of all kinds: adding brokers, improving email templates, translating the app, reporting bugs, or improving the code.
       </p>
       <p class="text-sm text-[var(--ek-text-muted)] leading-relaxed mb-3">
-        The app is built with Preact and Tailwind CSS, designed to be small, fast, and easy to understand. The codebase is intentionally simple so that anyone with basic web development knowledge can read, modify, and extend it.
+        ErasureKit will always be free. There are no premium tiers, no paid features, and no monetisation plans. The goal is to make data erasure accessible to everyone.
       </p>
     </div>
   `;
