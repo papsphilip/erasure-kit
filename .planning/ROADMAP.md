@@ -126,7 +126,11 @@ Plans:
   3. Each broker's status updates automatically from "selected" to "awaiting" as the relay confirms each send
   4. The Track page dashboard reflects real-time send progress with aggregate stats (sent, awaiting, confirmed, rejected, overdue)
   5. If the relay returns an error for a specific broker, that broker is marked as "failed" with a retry option
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 06-01-PLAN.md -- Relay client module (fetch wrapper for Worker API) and STATUS.FAILED addition to status tracker with tests
+- [ ] 06-02-PLAN.md -- Email sender refactor (mailto: to relay), campaign init with crypto key generation, end campaign flow
+- [ ] 06-03-PLAN.md -- UI integration: SendProgressModal, WelcomeScreen temp address, Brokers confirmation dialog, Track page retry/end campaign
 **UI hint**: yes
 
 ### Phase 7: Reply Monitoring and Response Classification
@@ -191,7 +195,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 3. Broker Database | v1.0 | 1/1 | Complete | 2026-03-29 |
 | 4. Email Templates | v1.0 | 2/2 | Complete | 2026-03-30 |
 | 5. Relay Infrastructure and E2E Encryption | v2.0 | 0/3 | Planning complete | - |
-| 6. Frontend Sending Integration | v2.0 | 0/0 | Not started | - |
+| 6. Frontend Sending Integration | v2.0 | 0/3 | Planning complete | - |
 | 7. Reply Monitoring and Response Classification | v2.0 | 0/0 | Not started | - |
 | 8. Quota-Aware Batching and Campaign Resume | v2.0 | 0/0 | Not started | - |
 | 9. Contributor Scaling and Relay Registry | v2.0 | 0/0 | Not started | - |
